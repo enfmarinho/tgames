@@ -1,0 +1,15 @@
+[package]
+name = "lgames"
+description = "A collection of little terminal games"
+version = "0.1.0"
+license = "MIT"
+authors = ["Eduardo Marinho <eduardonmarinho@proton.me>"]
+edition = "2021"
+
+[dependencies]
+strum = "0.26.1"
+strum_macros = "0.26.1"
+colored = "2.1.0"
+crossterm = "0.27.0"
+rand = "0.8.5"
+ratatui = "0.25.0"
