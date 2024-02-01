@@ -1,10 +1,10 @@
 pub mod game_manager;
-// pub mod snake_gm;
+pub mod snake_gm;
 // pub mod snaze_gm;
 // pub mod sudoku_gm;
 // pub mod tetris_gm;
 
-use self::game_manager::GameManager;
+use self::{game_manager::GameManager, snake_gm::SnakeGameManager};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{backend::CrosstermBackend, style::Stylize, widgets::Paragraph, Terminal};
 use std::io::{Result, Stdout};
@@ -267,8 +267,7 @@ impl LGamesManager {
         }
         match game {
             Games::Snake => {
-                // SnakeGameManager::new(&mut self.m_terminal).run()?;
-                println!("snake was selected");
+                SnakeGameManager::new(&mut self.m_terminal).run()?;
             }
             Games::Snaze => {
                 println!("snaze was selected");
