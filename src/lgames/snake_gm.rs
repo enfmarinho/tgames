@@ -43,7 +43,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu => {
+            GameState::Menu | GameState::Won | GameState::Lost => {
                 self.read_menu_input()?;
             }
             GameState::Helping => {
@@ -51,12 +51,6 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             }
             GameState::Playing => {
                 self.read_play_input()?;
-            }
-            GameState::Won => {
-                game_manager::read_key()?;
-            }
-            GameState::Lost => {
-                game_manager::read_key()?;
             }
             GameState::Quitting => (),
         }
@@ -66,14 +60,19 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn update(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => {
-                self.m_game_state = GameState::Menu;
+                self.m_game_state = GameState::Playing;
             }
             GameState::Helping => {
                 self.m_game_state = GameState::Menu;
             }
-            GameState::Menu => match self.m_menu_opt {
+            GameState::Menu | GameState::Won | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
                     self.m_game_state = GameState::Playing;
+                    if self.m_record < self.m_board.consult_score() {
+                        self.m_record = self.m_board.consult_score();
+                    }
+                    self.m_direction = Directions::Right;
+                    self.m_board.reset_board();
                 }
                 MenuOpt::Quit => {
                     self.m_game_state = GameState::Quitting;
@@ -99,22 +98,6 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 } else if self.m_board.won() {
                     self.m_game_state = GameState::Won;
                 }
-            }
-            GameState::Won => {
-                if self.m_record < self.m_board.consult_score() {
-                    self.m_record = self.m_board.consult_score();
-                }
-                self.m_game_state = GameState::Menu;
-                self.m_direction = Directions::Right;
-                self.m_board.reset_board();
-            }
-            GameState::Lost => {
-                if self.m_record < self.m_board.consult_score() {
-                    self.m_record = self.m_board.consult_score();
-                }
-                self.m_game_state = GameState::Menu;
-                self.m_direction = Directions::Right;
-                self.m_board.reset_board();
             }
             GameState::Quitting => (),
         }
@@ -165,9 +148,11 @@ impl<'a> SnakeGameManager<'a> {
     }
 
     fn display_menu_screen(&mut self) -> Result<()> {
-        let message =
-            String::from("This is the menu.\nPress enter to play\nPress f to change fps.\nScore: ")
-                + &self.m_record.to_string();
+        let message = self.m_board.display_board()
+            + &String::from(
+                "This is the menu.\nPress enter to play\nPress f to change fps.\nScore: ",
+            )
+            + &self.m_record.to_string();
         self.m_terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
