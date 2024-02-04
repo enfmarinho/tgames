@@ -127,7 +127,7 @@ impl Board {
                 },
                 // board += "H",
                 BoardPossibilities::SnakeDead => board += "󰯈",
-                BoardPossibilities::Food => board += "",
+                BoardPossibilities::Food => board += "󰉛",
             }
         }
         board += "│\n╰";
