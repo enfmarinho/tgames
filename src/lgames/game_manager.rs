@@ -1,13 +1,5 @@
 use crossterm::event;
-// use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use std::io::Result;
-
-pub enum Directions {
-    Up,
-    Down,
-    Left,
-    Right,
-}
 
 pub trait GameManager {
     fn run(&mut self) -> Result<()> {
@@ -27,34 +19,23 @@ pub trait GameManager {
     fn limit_fps(&self) {}
 }
 
-// Useful functions
-// pub fn read_confirmation() -> bool {
-//     let event = event::read();
-//     let key: Event;
-//     match event {
-//         Ok(value) => key = value,
-//         Err(_) => return false,
-//     }
-//     loop {
-//         match key {
-//             Event::Key(KeyEvent {
-//                 code: KeyCode::Char('y'),
-//                 kind: KeyEventKind::Press,
-//                 ..
-//             }) => return true,
-//             Event::Key(KeyEvent {
-//                 code: KeyCode::Char('n'),
-//                 kind: KeyEventKind::Press,
-//                 ..
-//             }) => return false,
-//             _ => (),
-//         }
-//     }
-// }
-
+// Useful things
 pub fn read_key() -> Result<()> {
     let event = event::read()?;
     match event {
         _ => Ok(()),
     }
+}
+
+#[derive(Clone)]
+pub struct Coord {
+    pub x: usize,
+    pub y: usize,
+}
+
+pub enum Directions {
+    Up,
+    Down,
+    Left,
+    Right,
 }

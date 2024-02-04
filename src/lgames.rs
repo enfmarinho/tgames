@@ -1,12 +1,19 @@
 pub mod game_manager;
 pub mod snake_gm;
+pub mod tetris_gm;
 // pub mod snaze_gm;
 // pub mod sudoku_gm;
-// pub mod tetris_gm;
 
-use self::{game_manager::GameManager, snake_gm::SnakeGameManager};
+use self::{game_manager::GameManager, snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::{backend::CrosstermBackend, style::Stylize, widgets::Paragraph, Terminal};
+use ratatui::layout::Alignment;
+use ratatui::widgets::Borders;
+use ratatui::{
+    backend::CrosstermBackend,
+    style::Stylize,
+    widgets::{block::Title, Block, Paragraph},
+    Terminal,
+};
 use std::io::{Result, Stdout};
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, FromRepr};
@@ -14,8 +21,8 @@ use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, FromRepr};
 #[derive(EnumIter, FromRepr, Display, EnumCountMacro)]
 enum Games {
     Snake,
-    Snaze,
     Tetris,
+    Snaze,
     Sudoku,
 }
 
@@ -32,7 +39,6 @@ enum LGamesState {
     Starting,
     MainMenu,
     Helping,
-    // AskingToQuit,
     Quitting,
 }
 
@@ -51,13 +57,8 @@ impl GameManager for LGamesManager {
                 game_manager::read_key()?;
             }
             LGamesState::MainMenu => {
-                self.read_main_menu_opt()?;
+                self.read_main_menu_input()?;
             }
-            // LGamesState::AskingToQuit => {
-            //     if !game_manager::read_confirmation() {
-            //         self.m_main_menu_opts = MainMenuOpts::None;
-            //     }
-            // }
             LGamesState::Quitting => (),
         }
         Ok(())
@@ -79,7 +80,6 @@ impl GameManager for LGamesManager {
                     self.m_execution_state = LGamesState::Helping;
                 }
                 MainMenuOpts::Quit => {
-                    // self.m_execution_state = LGamesState::AskingToQuit;
                     self.m_execution_state = LGamesState::Quitting;
                 }
                 MainMenuOpts::Up => {
@@ -94,13 +94,6 @@ impl GameManager for LGamesManager {
                 }
                 MainMenuOpts::None => (),
             },
-            // LGamesState::AskingToQuit => {
-            //     if matches!(self.m_main_menu_opts, MainMenuOpts::Quit) {
-            //         self.m_execution_state = LGamesState::Quitting;
-            //     } else {
-            //         self.m_execution_state = LGamesState::MainMenu;
-            //     }
-            // }
             LGamesState::Quitting => (),
         }
         Ok(())
@@ -108,18 +101,13 @@ impl GameManager for LGamesManager {
 
     fn render(&mut self) -> Result<()> {
         match self.m_execution_state {
-            LGamesState::Starting => {
-                // Do nothing
-            }
+            LGamesState::Starting => (),
             LGamesState::Helping => {
                 self.display_help_message()?;
             }
             LGamesState::MainMenu => {
                 self.display_main_menu()?;
             }
-            // LGamesState::AskingToQuit => {
-            //     self.display_confirmation_message()?;
-            // }
             LGamesState::Quitting => (),
         }
         Ok(())
@@ -150,24 +138,9 @@ impl LGamesManager {
     }
 
     fn display_main_menu(&mut self) -> Result<()> {
-        // TODO display logo
-        self.display_opts_highlighting(self.m_game_index)?;
-        Ok(())
-    }
-
-    // fn display_confirmation_message(&mut self) -> Result<()> {
-    //     let message = String::from("Are you sure you want to quit? [Y/n]");
-    //     self.m_terminal.draw(|frame| {
-    //         let area = frame.size();
-    //         frame.render_widget(Paragraph::new(message).white(), area)
-    //     })?;
-    //     Ok(())
-    // }
-
-    fn display_opts_highlighting(&mut self, index_to_highlight: usize) -> Result<()> {
         let mut message = String::from("");
         for (index, opts) in Games::iter().enumerate() {
-            if index == index_to_highlight {
+            if index == self.m_game_index {
                 message.push_str(&opts.to_string());
                 message.push_str(&"<".to_string());
             } else {
@@ -176,12 +149,16 @@ impl LGamesManager {
             message.push_str(&"\n\n".to_string());
         }
         self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area);
+            let block = Block::default()
+                .title(Title::from("LGames").alignment(Alignment::Center))
+                .borders(Borders::ALL)
+                .border_type(ratatui::widgets::BorderType::Rounded);
+            frame.render_widget(Paragraph::new(message).block(block), frame.size());
         })?;
         Ok(())
     }
-    fn read_main_menu_opt(&mut self) -> Result<()> {
+
+    fn read_main_menu_input(&mut self) -> Result<()> {
         loop {
             let event = event::read()?;
             match event {
@@ -261,6 +238,7 @@ impl LGamesManager {
                 game = value;
             }
             None => {
+                // Should not reach this.
                 self.m_game_index = 0;
                 return Ok(());
             }
@@ -269,14 +247,26 @@ impl LGamesManager {
             Games::Snake => {
                 SnakeGameManager::new(&mut self.m_terminal).run()?;
             }
-            Games::Snaze => {
-                println!("snaze was selected");
-            }
             Games::Tetris => {
-                println!("tetris was selected");
+                TetrisGameManager::new(&mut self.m_terminal).run()?;
+            }
+            Games::Snaze => {
+                // TODO delete this.
+                let message = String::from("snaze was selected");
+                self.m_terminal.draw(|frame| {
+                    let area = frame.size();
+                    frame.render_widget(Paragraph::new(message).white(), area);
+                })?;
+                game_manager::read_key()?;
             }
             Games::Sudoku => {
-                println!("sudoku was selected");
+                // TODO delete this.
+                let message = String::from("sudoku was selected");
+                self.m_terminal.draw(|frame| {
+                    let area = frame.size();
+                    frame.render_widget(Paragraph::new(message).white(), area);
+                })?;
+                game_manager::read_key()?;
             }
         }
         Ok(())

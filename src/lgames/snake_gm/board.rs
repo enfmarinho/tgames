@@ -1,13 +1,7 @@
-use super::game_manager::Directions;
+use super::game_manager::{Coord, Directions};
 use rand::Rng;
 use std::collections::VecDeque;
 use std::vec::Vec;
-
-#[derive(Clone)]
-pub struct Coord {
-    x: usize,
-    y: usize,
-}
 
 #[derive(Clone)]
 enum BoardPossibilities {
@@ -137,8 +131,8 @@ impl Board {
         self.m_score = 1;
         self.m_board
             .resize(self.m_height * self.m_width, BoardPossibilities::Empty);
-        for index in 0..self.m_board.len() {
-            self.m_board[index] = BoardPossibilities::Empty;
+        for index in &mut self.m_board {
+            *index = BoardPossibilities::Empty;
         }
         self.m_snake.clear();
         self.m_snake.push_front(Coord {

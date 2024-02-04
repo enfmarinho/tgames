@@ -3,7 +3,13 @@ mod board;
 use super::game_manager::{self, Directions};
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::{backend::CrosstermBackend, style::Stylize, widgets::Paragraph, Terminal};
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::Stylize,
+    widgets::{Block, Borders, Paragraph},
+    Terminal,
+};
 use std::{
     io::{Result, Stdout},
     time::Duration,
@@ -90,13 +96,20 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             },
             GameState::Playing => {
                 if matches!(self.m_menu_opt, MenuOpt::Quit) {
+                    self.m_board.reset_board();
                     self.m_game_state = GameState::Menu;
                 }
                 self.m_board.move_snake(&self.m_direction);
+                let mut ended: bool = false;
                 if self.m_board.snake_died() {
                     self.m_game_state = GameState::Lost;
+                    ended = true;
                 } else if self.m_board.won() {
                     self.m_game_state = GameState::Won;
+                    ended = true;
+                }
+                if ended && self.m_record < self.m_board.consult_score() {
+                    self.m_record = self.m_board.consult_score();
                 }
             }
             GameState::Quitting => (),
@@ -107,11 +120,11 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn render(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu => self.display_menu_screen()?,
-            GameState::Helping => self.display_help()?,
-            GameState::Playing => self.display_game_screen()?,
-            GameState::Won => self.display_victory_screen()?,
-            GameState::Lost => self.display_defeat_screen()?,
+            GameState::Menu => self.display_screen()?,
+            GameState::Helping => self.display_rules()?,
+            GameState::Playing => self.display_screen()?,
+            GameState::Won => self.display_screen()?,
+            GameState::Lost => self.display_screen()?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -138,7 +151,7 @@ impl<'a> SnakeGameManager<'a> {
         }
     }
 
-    fn display_help(&mut self) -> Result<()> {
+    fn display_rules(&mut self) -> Result<()> {
         let message = String::from("There are only two rules you must follow when playing: don’t hit a wall and don’t bite your own tail.\nYou can move the snake using the arrows keys or the vim keys.\nYou win the game when there is no more room for your snake to grow.\nYour high score is calculated based on the number of squares you added to the snake.");
         self.m_terminal.draw(|frame| {
             let area = frame.size();
@@ -147,45 +160,80 @@ impl<'a> SnakeGameManager<'a> {
         Ok(())
     }
 
-    fn display_menu_screen(&mut self) -> Result<()> {
-        let message = self.m_board.display_board()
-            + &String::from(
-                "This is the menu.\nPress enter to play\nPress f to change fps.\nScore: ",
-            )
-            + &self.m_record.to_string();
+    fn display_screen(&mut self) -> Result<()> {
+        let score: u32;
+        let help_message: String;
+        let title: String;
+        let score_title: String;
+        let mut message: String = String::new();
+        if matches!(self.m_game_state, GameState::Playing) {
+            score = self.m_board.consult_score();
+            help_message = Self::play_guide();
+            title = String::from("Game board");
+            score_title = String::from("Score");
+        } else {
+            score = self.m_record;
+            help_message = Self::menu_guide();
+            title = String::from("Menu");
+            score_title = String::from("Record");
+        }
+        if matches!(self.m_game_state, GameState::Won) {
+            message = String::from("You won, congratulations!\nPress enter to play again.\n");
+        } else if matches!(self.m_game_state, GameState::Lost) {
+            message = String::from("You lost!\nPress enter to try again.\n");
+        }
+
         self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area)
+            let layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(frame.size());
+            let sub_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])
+                .split(layout[1]);
+
+            frame.render_widget(
+                Paragraph::new(message + &self.m_board.display_board()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title(title)
+                        .title_alignment(Alignment::Center),
+                ),
+                layout[0],
+            );
+
+            frame.render_widget(
+                Paragraph::new(score.to_string()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title(score_title)
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[0],
+            );
+
+            frame.render_widget(
+                Paragraph::new(help_message).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Help")
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[1],
+            );
         })?;
         Ok(())
     }
 
-    fn display_game_screen(&mut self) -> Result<()> {
-        let message =
-            self.m_board.display_board() + "Score: " + &self.m_board.consult_score().to_string();
-        self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area)
-        })?;
-        Ok(())
+    fn play_guide() -> String {
+        String::from(
+            "'k' or    - Move up\n'j' or    - Move down\n'l' or    - Move right\n'h' or    - Move left\n'q' or ESC - Go to menu",
+        )
     }
 
-    fn display_victory_screen(&mut self) -> Result<()> {
-        let message = String::from("You won, congratulations!!\n") + &self.m_board.display_board();
-        self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area)
-        })?;
-        Ok(())
-    }
-
-    fn display_defeat_screen(&mut self) -> Result<()> {
-        let message = String::from("You lost, try again!\n") + &self.m_board.display_board();
-        self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area)
-        })?;
-        Ok(())
+    fn menu_guide() -> String {
+        String::from("")
     }
 
     fn read_play_input(&mut self) -> Result<()> {
