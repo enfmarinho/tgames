@@ -15,7 +15,7 @@ use std::{
     time::Duration,
 };
 
-const FPS_CHANGE: u64 = 15;
+const FPS_CHANGE: i64 = 15;
 
 enum MenuOpt {
     Play,
@@ -87,10 +87,10 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                     self.m_game_state = GameState::Helping;
                 }
                 MenuOpt::IncreaseFPS => {
-                    self.change_fps(self.m_fps + FPS_CHANGE);
+                    self.change_fps(self.m_fps as i64 + FPS_CHANGE);
                 }
                 MenuOpt::DecreaseFPS => {
-                    self.change_fps(self.m_fps - FPS_CHANGE);
+                    self.change_fps(self.m_fps as i64 - FPS_CHANGE);
                 }
                 MenuOpt::None => {}
             },
@@ -161,6 +161,7 @@ impl<'a> SnakeGameManager<'a> {
     }
 
     fn display_screen(&mut self) -> Result<()> {
+        let direction = &self.m_direction;
         let score: u32;
         let help_message: String;
         let title: String;
@@ -194,7 +195,7 @@ impl<'a> SnakeGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(message + &self.m_board.display_board()).block(
+                Paragraph::new(message + &self.m_board.display_board(direction)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -228,12 +229,13 @@ impl<'a> SnakeGameManager<'a> {
 
     fn play_guide() -> String {
         String::from(
-            "'k' or    - Move up\n'j' or    - Move down\n'l' or    - Move right\n'h' or    - Move left\n'q' or ESC - Go to menu",
+            "k or    - Move up\nj or    - Move down\nl or    - Move right\nh or    - Move left\nESC or q - Go to menu",
         )
     }
 
     fn menu_guide() -> String {
-        String::from("")
+        String::from("ENTER or p - Play\nESC or q   - Go to main menu\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\n",
+        )
     }
 
     fn read_play_input(&mut self) -> Result<()> {
@@ -351,12 +353,12 @@ impl<'a> SnakeGameManager<'a> {
                     break;
                 }
                 Event::Key(KeyEvent {
-                    code: KeyCode::Char('f'),
+                    code: KeyCode::Char('F'),
                     kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::CONTROL,
+                    modifiers: KeyModifiers::SHIFT,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::DecreaseFPS;
+                    self.m_menu_opt = MenuOpt::IncreaseFPS;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -365,7 +367,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::IncreaseFPS;
+                    self.m_menu_opt = MenuOpt::DecreaseFPS;
                     break;
                 }
                 _ => (),
@@ -374,7 +376,9 @@ impl<'a> SnakeGameManager<'a> {
         Ok(())
     }
 
-    fn change_fps(&mut self, fps: u64) {
-        self.m_fps = fps;
+    fn change_fps(&mut self, fps: i64) {
+        if fps > 0 {
+            self.m_fps = fps as u64;
+        }
     }
 }

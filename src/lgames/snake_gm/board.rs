@@ -101,29 +101,40 @@ impl Board {
         self.m_score
     }
 
-    pub fn display_board(&self) -> String {
+    pub fn display_board(&self, direction: &Directions) -> String {
+        //
         let mut board = String::new();
-        for _counter in 0..self.m_width + 1 {
-            board += "#";
+        board += "╭";
+        for _counter in 1..self.m_width + 1 {
+            board += "─";
         }
         for index in 0..self.m_board.len() {
-            if index % self.m_width == 0 {
-                board += "#\n";
-                board += "#";
+            if index == 0 {
+                board += "╮\n";
+                board += "│";
+            } else if index % self.m_width == 0 {
+                board += "│\n";
+                board += "│";
             }
             match self.m_board[index] {
                 BoardPossibilities::Empty => board += " ",
-                BoardPossibilities::SnakeBody => board += "=",
-                BoardPossibilities::SnakeHead => board += "H",
-                BoardPossibilities::SnakeDead => board += "%",
-                BoardPossibilities::Food => board += "@",
+                BoardPossibilities::SnakeBody => board += "󱓻",
+                BoardPossibilities::SnakeHead => match direction {
+                    Directions::Up => board += "",
+                    Directions::Down => board += "",
+                    Directions::Left => board += "",
+                    Directions::Right => board += "",
+                },
+                // board += "H",
+                BoardPossibilities::SnakeDead => board += "󰯈",
+                BoardPossibilities::Food => board += "",
             }
         }
-        board += "#\n";
-        for _counter in 0..self.m_width + 2 {
-            board += "#";
+        board += "│\n╰";
+        for _counter in 1..self.m_width + 1 {
+            board += "─";
         }
-        board += "\n";
+        board += "╯\n";
         board
     }
 
