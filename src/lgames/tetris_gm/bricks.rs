@@ -8,6 +8,7 @@ pub struct Brick {
     m_coord: Vec<bool>,
     m_color: BoardPossibilities,
     m_rotation: i8,
+    m_number_of_rotations: i8,
 }
 impl Brick {
     pub fn new() -> Self {
@@ -17,43 +18,50 @@ impl Brick {
                 m_coord: Self::i_shape(),
                 m_color: BoardPossibilities::Cyan,
                 m_rotation: 0,
+                m_number_of_rotations: 2,
             },
             1 => Self {
                 m_coord: Self::j_shape(),
                 m_color: BoardPossibilities::Blue,
+                m_number_of_rotations: 4,
                 m_rotation: 0,
             },
             2 => Self {
                 m_coord: Self::l_shape(),
                 m_color: BoardPossibilities::Orange,
                 m_rotation: 0,
+                m_number_of_rotations: 4,
             },
             3 => Self {
                 m_coord: Self::o_shape(),
                 m_color: BoardPossibilities::Yellow,
                 m_rotation: 0,
+                m_number_of_rotations: 1,
             },
             4 => Self {
                 m_coord: Self::s_shape(),
                 m_color: BoardPossibilities::Green,
                 m_rotation: 0,
+                m_number_of_rotations: 4,
             },
             5 => Self {
                 m_coord: Self::t_shape(),
                 m_color: BoardPossibilities::Pink,
                 m_rotation: 0,
+                m_number_of_rotations: 4,
             },
             _ => Self {
                 m_coord: Self::z_shape(),
                 m_color: BoardPossibilities::Red,
                 m_rotation: 0,
+                m_number_of_rotations: 4,
             },
         }
     }
 
     pub fn rotate(&mut self) {
         self.m_rotation += 1;
-        self.m_rotation %= 4;
+        self.m_rotation %= self.m_number_of_rotations;
     }
     pub fn unrotate(&mut self) {
         if self.m_rotation == 0 {
