@@ -27,8 +27,10 @@ impl Board {
             m_width: board_width,
             m_score: 1,
             m_snake: VecDeque::new(),
-            // m_alive: true,
         };
+        board
+            .m_board
+            .resize(board.m_height * board.m_width, BoardPossibilities::Empty);
         board.reset_board();
         return board;
     }
@@ -140,11 +142,7 @@ impl Board {
 
     pub fn reset_board(&mut self) {
         self.m_score = 1;
-        self.m_board
-            .resize(self.m_height * self.m_width, BoardPossibilities::Empty);
-        for index in &mut self.m_board {
-            *index = BoardPossibilities::Empty;
-        }
+        self.m_board.fill(BoardPossibilities::Empty);
         self.m_snake.clear();
         self.m_snake.push_front(Coord {
             x: self.m_width / 3,
