@@ -97,7 +97,10 @@ impl Board {
 
     pub fn rotate(&mut self) {
         self.m_brick.rotate();
-        if !self.fit(self.m_brick_coord.y as i8, self.m_brick_coord.x as i8) {
+        if !self.fit(
+            self.m_brick_coord.y as i8 - 1,
+            self.m_brick_coord.x as i8 - 2,
+        ) {
             self.m_brick.unrotate();
         }
     }
