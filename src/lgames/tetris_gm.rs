@@ -13,7 +13,8 @@ use ratatui::{
 };
 use std::{
     io::{Result, Stdout},
-    time::Duration,
+    thread::sleep,
+    time::{Duration, SystemTime},
 };
 
 enum MenuOpt {
@@ -96,7 +97,11 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 self.m_game_state = GameState::Menu;
             }
             GameState::Playing => {
-                self.m_board.drop();
+                self.m_counter += 1;
+                if self.m_counter > 2 {
+                    self.m_board.drop();
+                    self.m_counter = 0;
+                }
                 match self.m_play_opt {
                     PlayOpt::Left => {
                         self.m_board.move_left();
@@ -162,9 +167,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         matches!(self.m_game_state, GameState::Quitting)
     }
 
-    fn limit_fps(&self) {
-        std::thread::sleep(std::time::Duration::from_millis(1000 / 25));
-    }
+    fn limit_fps(&self) {}
 }
 impl<'a> TetrisGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
@@ -313,7 +316,9 @@ impl<'a> TetrisGameManager<'a> {
     }
 
     fn read_play_input(&mut self) -> Result<()> {
-        if poll(Duration::from_millis(100))? {
+        let time = SystemTime::now();
+        let wait_time = Duration::from_millis(50);
+        if poll(wait_time)? {
             match read()? {
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('h'),
@@ -393,6 +398,19 @@ impl<'a> TetrisGameManager<'a> {
             }
         } else {
             self.m_play_opt = PlayOpt::None;
+        }
+        match time.elapsed() {
+            Ok(duration) => {
+                let sleep_time: u128;
+                // sleep for the difference of
+                if duration.as_millis() > wait_time.as_millis() {
+                    sleep_time = duration.as_millis() - wait_time.as_millis();
+                } else {
+                    sleep_time = wait_time.as_millis() - duration.as_millis();
+                }
+                sleep(Duration::from_millis(sleep_time as u64));
+            }
+            Err(_) => (),
         }
         Ok(())
     }
