@@ -86,12 +86,14 @@ impl Board {
     pub fn soft_drop(&mut self) {
         for _ in 0..2 {
             self.drop();
+            self.m_score += 1;
         }
     }
 
     pub fn hard_drop(&mut self) {
         while self.fit(self.m_brick_coord.y as i8, self.m_brick_coord.x as i8 - 2) {
             self.drop();
+            self.m_score += 2;
         }
     }
 
