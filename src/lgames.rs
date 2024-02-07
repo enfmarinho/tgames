@@ -1,10 +1,14 @@
+pub mod g2048_gm;
 pub mod game_manager;
 pub mod snake_gm;
 pub mod tetris_gm;
 // pub mod snaze_gm;
 // pub mod sudoku_gm;
 
-use self::{game_manager::GameManager, snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager};
+use self::{
+    g2048_gm::G2048GameManager, game_manager::GameManager, snake_gm::SnakeGameManager,
+    tetris_gm::TetrisGameManager,
+};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     backend::CrosstermBackend,
@@ -22,6 +26,7 @@ use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, FromRepr};
 enum Games {
     Snake,
     Tetris,
+    G2048,
     Snaze,
     Sudoku,
 }
@@ -248,12 +253,9 @@ impl LGamesManager {
             }
         }
         match game {
-            Games::Snake => {
-                SnakeGameManager::new(&mut self.m_terminal).run()?;
-            }
-            Games::Tetris => {
-                TetrisGameManager::new(&mut self.m_terminal).run()?;
-            }
+            Games::Snake => SnakeGameManager::new(&mut self.m_terminal).run()?,
+            Games::Tetris => TetrisGameManager::new(&mut self.m_terminal).run()?,
+            Games::G2048 => G2048GameManager::new(&mut self.m_terminal).run()?,
             Games::Snaze => {
                 // TODO delete this.
                 let message = String::from("snaze was selected");
