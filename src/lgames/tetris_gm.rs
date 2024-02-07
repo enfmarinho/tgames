@@ -232,7 +232,7 @@ impl<'a> TetrisGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message.to_string())).block(
+                Paragraph::new(self.m_board.display_board(message)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)

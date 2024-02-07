@@ -64,25 +64,14 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
                     self.m_game_state = GameState::Playing;
-                    if self.m_record < self.m_board.consult_score() {
-                        self.m_record = self.m_board.consult_score();
-                    }
                     self.m_direction = Directions::Right;
                     self.m_board.reset_board();
                 }
-                MenuOpt::Quit => {
-                    self.m_game_state = GameState::Quitting;
-                }
-                MenuOpt::Help => {
-                    self.m_game_state = GameState::Helping;
-                }
-                MenuOpt::IncreaseFPS => {
-                    self.change_fps(self.m_fps as i64 + FPS_CHANGE);
-                }
-                MenuOpt::DecreaseFPS => {
-                    self.change_fps(self.m_fps as i64 - FPS_CHANGE);
-                }
-                MenuOpt::None => {}
+                MenuOpt::Quit => self.m_game_state = GameState::Quitting,
+                MenuOpt::Help => self.m_game_state = GameState::Helping,
+                MenuOpt::IncreaseFPS => self.change_fps(self.m_fps as i64 + FPS_CHANGE),
+                MenuOpt::DecreaseFPS => self.change_fps(self.m_fps as i64 - FPS_CHANGE),
+                MenuOpt::None => (),
             },
             GameState::Playing => {
                 if matches!(self.m_menu_opt, MenuOpt::Quit) {

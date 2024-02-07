@@ -154,7 +154,7 @@ impl Board {
         self.m_score
     }
 
-    pub fn display_board(&self, message: String) -> Vec<Line> {
+    pub fn display_board(&self, message: &str) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         lines.push(Line::from(message));
         for line in 0..NUMBER_OF_LINES {
