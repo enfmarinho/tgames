@@ -98,7 +98,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             }
             GameState::Playing => {
                 self.m_counter += 1;
-                if self.m_counter > 2 {
+                if self.m_counter > 3 {
                     self.m_board.drop();
                     self.m_counter = 0;
                 }
@@ -125,11 +125,17 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                     }
                     PlayOpt::Quit => {
                         self.m_game_state = GameState::Menu;
+                        if self.m_board.consult_score() > self.m_record {
+                            self.m_record = self.m_board.consult_score();
+                        }
                     }
                     PlayOpt::None => (),
                 }
                 if self.m_board.defeated() {
                     self.m_game_state = GameState::Lost;
+                    if self.m_board.consult_score() > self.m_record {
+                        self.m_record = self.m_board.consult_score();
+                    }
                 }
             }
             GameState::Pause => {
@@ -144,19 +150,37 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         match self.m_game_state {
             GameState::Starting => (),
             GameState::Menu => {
-                self.display_screen()?;
+                self.display_screen(self.m_record, Self::menu_guide(), "Menu", "Record", "")?;
             }
             GameState::Helping => {
                 self.display_game_rules()?;
             }
             GameState::Playing => {
-                self.display_screen()?;
+                self.display_screen(
+                    self.m_board.consult_score(),
+                    Self::play_guide(),
+                    "Game board",
+                    "Score",
+                    "",
+                )?;
             }
             GameState::Pause => {
-                self.display_screen()?;
+                self.display_screen(
+                    self.m_record,
+                    Self::menu_guide(),
+                    "Menu",
+                    "Score",
+                    "Game is paused.\nPress enter to continue.",
+                )?;
             }
             GameState::Lost => {
-                self.display_screen()?;
+                self.display_screen(
+                    self.m_record,
+                    Self::menu_guide(),
+                    "Menu",
+                    "Record",
+                    "You lost!\nPress enter to try again.",
+                )?;
             }
             GameState::Quitting => (),
         }
@@ -166,9 +190,8 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     fn ended(&self) -> bool {
         matches!(self.m_game_state, GameState::Quitting)
     }
-
-    fn limit_fps(&self) {}
 }
+
 impl<'a> TetrisGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         Self {
@@ -190,29 +213,14 @@ impl<'a> TetrisGameManager<'a> {
         String::from("") // TODO write message
     }
 
-    fn display_screen(&mut self) -> Result<()> {
-        let score: u32;
-        let help_message: String;
-        let title: String;
-        let score_title: String;
-        let mut message: String = String::new();
-        if matches!(self.m_game_state, GameState::Playing) {
-            score = self.m_board.consult_score();
-            help_message = Self::play_guide();
-            title = String::from("Game board");
-            score_title = String::from("Score");
-        } else {
-            score = self.m_record;
-            help_message = Self::menu_guide();
-            title = String::from("Menu");
-            score_title = String::from("Record");
-        }
-        if matches!(self.m_game_state, GameState::Lost) {
-            message = String::from("You lost!\nPress enter to try again.\n");
-        } else if matches!(self.m_game_state, GameState::Pause) {
-            message = String::from("Game is paused. Press enter to continue.\n")
-        }
-
+    fn display_screen(
+        &mut self,
+        score: u32,
+        help_message: String,
+        title: &str,
+        score_title: &str,
+        message: &str,
+    ) -> Result<()> {
         self.m_terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
@@ -224,8 +232,7 @@ impl<'a> TetrisGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                // TODO display board with colors
-                Paragraph::new(message + &self.m_board.d()).block(
+                Paragraph::new(self.m_board.display_board(message.to_string())).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)

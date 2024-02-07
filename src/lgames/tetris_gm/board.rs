@@ -1,3 +1,6 @@
+use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span};
+
 use super::bricks::Brick;
 use super::game_manager::Coord;
 
@@ -147,6 +150,93 @@ impl Board {
         self.m_score
     }
 
+    pub fn display_board(&self, message: String) -> Vec<Line> {
+        let mut lines: Vec<Line> = Vec::new();
+        lines.push(Line::from(message));
+        for line in 0..NUMBER_OF_LINES {
+            let mut spans: Vec<Span> = Vec::new();
+            spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+            for column in 0..NUMBER_OF_COLUMNS {
+                match self.consult(line, column) {
+                    BoardPossibilities::Red => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Red)));
+                    }
+                    BoardPossibilities::Green => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Green)));
+                    }
+                    BoardPossibilities::Blue => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Blue)));
+                    }
+                    BoardPossibilities::Cyan => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Cyan)));
+                    }
+                    BoardPossibilities::Pink => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::LightMagenta)));
+                    }
+                    BoardPossibilities::Orange => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Magenta)));
+                    }
+                    BoardPossibilities::Yellow => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Yellow)));
+                    }
+                    BoardPossibilities::Empty => {
+                        spans.push(Span::styled("  ", Style::default()));
+                    }
+                }
+            }
+            spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+            lines.push(Line::from(spans));
+        }
+        let mut spans: Vec<Span> = Vec::new();
+        spans.push(Span::styled("╰", Style::default().fg(Color::DarkGray)));
+        for _counter in 1..NUMBER_OF_COLUMNS + 1 {
+            spans.push(Span::styled("──", Style::default().fg(Color::DarkGray)));
+        }
+        spans.push(Span::styled("╯", Style::default().fg(Color::DarkGray)));
+        lines.push(Line::from(spans));
+        return lines;
+    }
+
+    pub fn display_next_brick(&self) -> Vec<Line> {
+        let mut lines: Vec<Line> = Vec::new();
+        for i in 0..4 {
+            for j in 0..4 {
+                let mut spans: Vec<Span> = Vec::new();
+                if self.m_brick.consult(i, j) {
+                    match self.m_next_brick.consult_color() {
+                        BoardPossibilities::Red => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Red)));
+                        }
+                        BoardPossibilities::Green => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Green)));
+                        }
+                        BoardPossibilities::Blue => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Blue)));
+                        }
+                        BoardPossibilities::Cyan => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Cyan)));
+                        }
+                        BoardPossibilities::Pink => {
+                            spans
+                                .push(Span::styled("██", Style::default().fg(Color::LightMagenta)));
+                        }
+                        BoardPossibilities::Orange => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Magenta)));
+                        }
+                        BoardPossibilities::Yellow => {
+                            spans.push(Span::styled("██", Style::default().fg(Color::Yellow)));
+                        }
+                        BoardPossibilities::Empty => {}
+                    }
+                } else {
+                    spans.push(Span::styled("  ", Style::default()));
+                }
+                lines.push(Line::from(spans));
+            }
+        }
+        lines
+    }
+
     fn fit(&self, iy: i8, ix: i8) -> bool {
         for py in 0..4 {
             for px in 0..4 {
@@ -172,47 +262,6 @@ impl Board {
 
     fn distance(origin: i8, destiny: i8) -> i8 {
         origin - destiny
-    }
-
-    // TODO remove this function, just to check
-    pub fn d(&self) -> String {
-        let mut board: String = String::new();
-        for line in 0..NUMBER_OF_LINES {
-            board += "#";
-            for column in 0..NUMBER_OF_COLUMNS {
-                match self.consult(line, column) {
-                    BoardPossibilities::Red => {
-                        board.push('R');
-                    }
-                    BoardPossibilities::Green => {
-                        board.push('G');
-                    }
-                    BoardPossibilities::Blue => {
-                        board.push('B');
-                    }
-                    BoardPossibilities::Cyan => {
-                        board.push('C');
-                    }
-                    BoardPossibilities::Pink => {
-                        board.push('P');
-                    }
-                    BoardPossibilities::Orange => {
-                        board.push('O');
-                    }
-                    BoardPossibilities::Yellow => {
-                        board.push('Y');
-                    }
-                    BoardPossibilities::Empty => {
-                        board.push(' ');
-                    }
-                }
-            }
-            board += "#\n";
-        }
-        for _counter in 0..NUMBER_OF_COLUMNS + 2 {
-            board += "#";
-        }
-        return board;
     }
 
     fn line_completed(&self, index: usize) -> bool {
