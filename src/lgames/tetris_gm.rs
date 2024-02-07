@@ -52,7 +52,8 @@ pub struct TetrisGameManager<'a> {
     m_play_opt: PlayOpt,
     m_board: Board,
     m_counter: usize,
-    m_record: u32,
+    m_score_record: u32,
+    m_line_record: u32,
 }
 impl<'a> GameManager for TetrisGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
@@ -125,16 +126,22 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                     }
                     PlayOpt::Quit => {
                         self.m_game_state = GameState::Menu;
-                        if self.m_board.consult_score() > self.m_record {
-                            self.m_record = self.m_board.consult_score();
+                        if self.m_board.consult_score() > self.m_score_record {
+                            self.m_score_record = self.m_board.consult_score();
+                        }
+                        if self.m_board.consult_lines_completed() > self.m_line_record {
+                            self.m_line_record = self.m_board.consult_lines_completed();
                         }
                     }
                     PlayOpt::None => (),
                 }
                 if self.m_board.defeated() {
                     self.m_game_state = GameState::Lost;
-                    if self.m_board.consult_score() > self.m_record {
-                        self.m_record = self.m_board.consult_score();
+                    if self.m_board.consult_score() > self.m_score_record {
+                        self.m_score_record = self.m_board.consult_score();
+                    }
+                    if self.m_board.consult_lines_completed() > self.m_line_record {
+                        self.m_line_record = self.m_board.consult_lines_completed();
                     }
                 }
             }
@@ -150,7 +157,14 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         match self.m_game_state {
             GameState::Starting => (),
             GameState::Menu => {
-                self.display_screen(self.m_record, Self::menu_guide(), "Menu", "Record", "")?;
+                self.display_screen(
+                    self.m_score_record,
+                    self.m_line_record,
+                    Self::menu_guide(),
+                    "Menu",
+                    "Record",
+                    "",
+                )?;
             }
             GameState::Helping => {
                 self.display_game_rules()?;
@@ -158,6 +172,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             GameState::Playing => {
                 self.display_screen(
                     self.m_board.consult_score(),
+                    self.m_board.consult_lines_completed(),
                     Self::play_guide(),
                     "Game board",
                     "Score",
@@ -166,7 +181,8 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             }
             GameState::Pause => {
                 self.display_screen(
-                    self.m_record,
+                    self.m_score_record,
+                    self.m_line_record,
                     Self::menu_guide(),
                     "Menu",
                     "Score",
@@ -175,7 +191,8 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             }
             GameState::Lost => {
                 self.display_screen(
-                    self.m_record,
+                    self.m_score_record,
+                    self.m_line_record,
                     Self::menu_guide(),
                     "Menu",
                     "Record",
@@ -201,7 +218,8 @@ impl<'a> TetrisGameManager<'a> {
             m_play_opt: PlayOpt::None,
             m_board: Board::new(),
             m_counter: 0,
-            m_record: 0,
+            m_score_record: 0,
+            m_line_record: 0,
         }
     }
 
@@ -216,6 +234,7 @@ impl<'a> TetrisGameManager<'a> {
     fn display_screen(
         &mut self,
         score: u32,
+        line_score: u32,
         help_message: String,
         title: &str,
         score_title: &str,
@@ -228,7 +247,12 @@ impl<'a> TetrisGameManager<'a> {
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])
+                .constraints([
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(20),
+                    Constraint::Fill(1),
+                ])
                 .split(layout[1]);
 
             frame.render_widget(
@@ -242,13 +266,33 @@ impl<'a> TetrisGameManager<'a> {
             );
 
             frame.render_widget(
-                Paragraph::new(score.to_string()).block(
+                Paragraph::new(self.m_board.display_next_brick()).block(
                     Block::new()
                         .borders(Borders::ALL)
-                        .title(score_title)
+                        .title("Next brick")
                         .title_alignment(Alignment::Center),
                 ),
                 sub_layout[0],
+            );
+
+            frame.render_widget(
+                Paragraph::new(score.to_string()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Game ".to_string() + score_title)
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[1],
+            );
+
+            frame.render_widget(
+                Paragraph::new(line_score.to_string()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Line ".to_string() + score_title)
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[2],
             );
 
             frame.render_widget(
@@ -258,7 +302,7 @@ impl<'a> TetrisGameManager<'a> {
                         .title("Help")
                         .title_alignment(Alignment::Center),
                 ),
-                sub_layout[1],
+                sub_layout[3],
             );
         })?;
         Ok(())

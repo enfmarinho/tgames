@@ -146,6 +146,10 @@ impl Board {
         }
     }
 
+    pub fn consult_lines_completed(&self) -> u32 {
+        self.m_lines
+    }
+
     pub fn consult_score(&self) -> u32 {
         self.m_score
     }
@@ -290,6 +294,7 @@ impl Board {
             4 => self.m_score += 5000,
             _ => (),
         }
+        self.m_lines += completed as u32;
     }
 
     fn check_for_lost(&mut self) {
