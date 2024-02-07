@@ -248,9 +248,9 @@ impl<'a> TetrisGameManager<'a> {
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(10),
-                    Constraint::Percentage(20),
+                    Constraint::Percentage(15),
+                    Constraint::Percentage(15),
+                    Constraint::Percentage(15),
                     Constraint::Fill(1),
                 ])
                 .split(layout[1]);

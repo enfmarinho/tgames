@@ -123,7 +123,7 @@ impl Board {
         self.m_score = 0;
         self.m_lines = 0;
         self.m_lost = false;
-        self.m_brick = Brick::new();
+        self.m_brick = self.m_next_brick.clone();
         self.m_next_brick = Brick::new();
         self.m_brick_coord = Coord {
             x: NUMBER_OF_COLUMNS / 2,
@@ -204,9 +204,9 @@ impl Board {
     pub fn display_next_brick(&self) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         for i in 0..4 {
+            let mut spans: Vec<Span> = Vec::new();
             for j in 0..4 {
-                let mut spans: Vec<Span> = Vec::new();
-                if self.m_brick.consult(i, j) {
+                if self.m_next_brick.consult(i, j) {
                     match self.m_next_brick.consult_color() {
                         BoardPossibilities::Red => {
                             spans.push(Span::styled("██", Style::default().fg(Color::Red)));
@@ -235,8 +235,8 @@ impl Board {
                 } else {
                     spans.push(Span::styled("  ", Style::default()));
                 }
-                lines.push(Line::from(spans));
             }
+            lines.push(Line::from(spans));
         }
         lines
     }
