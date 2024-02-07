@@ -6,12 +6,12 @@ pub mod tetris_gm;
 
 use self::{game_manager::GameManager, snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::layout::Alignment;
-use ratatui::widgets::Borders;
 use ratatui::{
     backend::CrosstermBackend,
-    style::Stylize,
-    widgets::{block::Title, Block, Paragraph},
+    layout::Alignment,
+    style::{Style, Stylize},
+    text::{Line, Span},
+    widgets::{block::Title, Block, Borders, Paragraph},
     Terminal,
 };
 use std::io::{Result, Stdout};
@@ -138,22 +138,26 @@ impl LGamesManager {
     }
 
     fn display_main_menu(&mut self) -> Result<()> {
-        let mut message = String::from("");
+        let mut lines: Vec<Line> = Vec::new();
         for (index, opts) in Games::iter().enumerate() {
             if index == self.m_game_index {
-                message.push_str(&opts.to_string());
-                message.push_str(&"<".to_string());
+                lines.push(Line::from(Span::styled(
+                    "> ".to_string() + &opts.to_string() + &" <".to_string(),
+                    Style::default().green(),
+                )));
             } else {
-                message.push_str(&opts.to_string());
+                lines.push(Line::from(
+                    Span::styled(opts.to_string(), Style::default()).gray(),
+                ));
             }
-            message.push_str(&"\n\n".to_string());
+            lines.push(Line::from(Span::styled("\n\n", Style::default()).gray()));
         }
         self.m_terminal.draw(|frame| {
             let block = Block::default()
                 .title(Title::from("LGames").alignment(Alignment::Center))
                 .borders(Borders::ALL)
                 .border_type(ratatui::widgets::BorderType::Rounded);
-            frame.render_widget(Paragraph::new(message).block(block), frame.size());
+            frame.render_widget(Paragraph::new(lines).block(block), frame.size());
         })?;
         Ok(())
     }
