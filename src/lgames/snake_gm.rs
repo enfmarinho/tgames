@@ -49,15 +49,9 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu | GameState::Won | GameState::Lost => {
-                self.read_menu_input()?;
-            }
-            GameState::Helping => {
-                game_manager::read_key()?;
-            }
-            GameState::Playing => {
-                self.read_play_input()?;
-            }
+            GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
+            GameState::Helping => game_manager::read_key()?,
+            GameState::Playing => self.read_play_input()?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -65,12 +59,8 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
 
     fn update(&mut self) -> Result<()> {
         match self.m_game_state {
-            GameState::Starting => {
-                self.m_game_state = GameState::Playing;
-            }
-            GameState::Helping => {
-                self.m_game_state = GameState::Menu;
-            }
+            GameState::Starting => self.m_game_state = GameState::Playing,
+            GameState::Helping => self.m_game_state = GameState::Menu,
             GameState::Menu | GameState::Won | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
                     self.m_game_state = GameState::Playing;
@@ -120,8 +110,8 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn render(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu => self.display_screen()?,
             GameState::Helping => self.display_rules()?,
+            GameState::Menu => self.display_screen()?,
             GameState::Playing => self.display_screen()?,
             GameState::Won => self.display_screen()?,
             GameState::Lost => self.display_screen()?,

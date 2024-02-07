@@ -37,12 +37,10 @@ impl Board {
 
     pub fn snake_died(&self) -> bool {
         match self.m_snake.front() {
-            Some(coord) => {
-                matches!(
-                    self.consult_board(coord.y, coord.x),
-                    BoardPossibilities::SnakeDead
-                )
-            }
+            Some(coord) => matches!(
+                self.consult_board(coord.y, coord.x),
+                BoardPossibilities::SnakeDead
+            ),
             None => false,
         }
     }
@@ -54,9 +52,7 @@ impl Board {
         let head: Coord;
         match self.m_snake.front() {
             Some(value) => head = value.clone(),
-            None => {
-                panic!();
-            }
+            None => panic!(),
         }
         let mut new_head_pos = head.clone();
         // making indexing from one to avoid overflow, since its unsigned.
@@ -104,7 +100,6 @@ impl Board {
     }
 
     pub fn display_board(&self, direction: &Directions) -> String {
-        //
         let mut board = String::new();
         board += "╭";
         for _counter in 1..self.m_width + 1 {
@@ -127,7 +122,6 @@ impl Board {
                     Directions::Left => board += "",
                     Directions::Right => board += "",
                 },
-                // board += "H",
                 BoardPossibilities::SnakeDead => board += "󰯈",
                 BoardPossibilities::Food => board += "󰉛",
             }

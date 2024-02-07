@@ -59,18 +59,10 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu | GameState::Lost => {
-                self.read_menu_input()?;
-            }
-            GameState::Helping => {
-                game_manager::read_key()?;
-            }
-            GameState::Playing => {
-                self.read_play_input()?;
-            }
-            GameState::Pause => {
-                game_manager::read_key()?;
-            }
+            GameState::Helping => game_manager::read_key()?,
+            GameState::Menu | GameState::Lost => self.read_menu_input()?,
+            GameState::Playing => self.read_play_input()?,
+            GameState::Pause => game_manager::read_key()?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -78,9 +70,8 @@ impl<'a> GameManager for TetrisGameManager<'a> {
 
     fn update(&mut self) -> Result<()> {
         match self.m_game_state {
-            GameState::Starting => {
-                self.m_game_state = GameState::Playing;
-            }
+            GameState::Starting => self.m_game_state = GameState::Playing,
+            GameState::Helping => self.m_game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
                     self.m_board.reset_board();
@@ -94,9 +85,6 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 }
                 MenuOpt::None => (),
             },
-            GameState::Helping => {
-                self.m_game_state = GameState::Menu;
-            }
             GameState::Playing => {
                 self.m_counter += 1;
                 if self.m_counter > 3 {
@@ -145,9 +133,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                     }
                 }
             }
-            GameState::Pause => {
-                self.m_game_state = GameState::Playing;
-            }
+            GameState::Pause => self.m_game_state = GameState::Playing,
             GameState::Quitting => (),
         }
         Ok(())
@@ -156,49 +142,39 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     fn render(&mut self) -> Result<()> {
         match self.m_game_state {
             GameState::Starting => (),
-            GameState::Menu => {
-                self.display_screen(
-                    self.m_score_record,
-                    self.m_line_record,
-                    Self::menu_guide(),
-                    "Menu",
-                    "Record",
-                    "",
-                )?;
-            }
-            GameState::Helping => {
-                self.display_game_rules()?;
-            }
-            GameState::Playing => {
-                self.display_screen(
-                    self.m_board.consult_score(),
-                    self.m_board.consult_lines_completed(),
-                    Self::play_guide(),
-                    "Game board",
-                    "Score",
-                    "",
-                )?;
-            }
-            GameState::Pause => {
-                self.display_screen(
-                    self.m_score_record,
-                    self.m_line_record,
-                    Self::menu_guide(),
-                    "Menu",
-                    "Score",
-                    "Game is paused.\nPress enter to continue.",
-                )?;
-            }
-            GameState::Lost => {
-                self.display_screen(
-                    self.m_score_record,
-                    self.m_line_record,
-                    Self::menu_guide(),
-                    "Menu",
-                    "Record",
-                    "You lost!\nPress enter to try again.",
-                )?;
-            }
+            GameState::Helping => self.display_game_rules()?,
+            GameState::Menu => self.display_screen(
+                self.m_score_record,
+                self.m_line_record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "",
+            )?,
+            GameState::Playing => self.display_screen(
+                self.m_board.consult_score(),
+                self.m_board.consult_lines_completed(),
+                Self::play_guide(),
+                "Game board",
+                "Score",
+                "",
+            )?,
+            GameState::Pause => self.display_screen(
+                self.m_score_record,
+                self.m_line_record,
+                Self::menu_guide(),
+                "Menu",
+                "Score",
+                "Game is paused.\nPress enter to continue.",
+            )?,
+            GameState::Lost => self.display_screen(
+                self.m_score_record,
+                self.m_line_record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "You lost!\nPress enter to try again.",
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
