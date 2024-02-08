@@ -25,8 +25,8 @@ impl Board {
     }
 
     pub fn start_game(&mut self) {
-        self.generate_piece();
-        self.generate_piece();
+        self.generate_block();
+        self.generate_block();
     }
 
     pub fn defeated(&self) -> bool {
@@ -41,6 +41,7 @@ impl Board {
             Directions::Right => self.move_right(),
             Directions::Left => self.move_left(),
         }
+        self.generate_block();
     }
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
@@ -161,6 +162,20 @@ impl Board {
 
     pub fn consult_number_of_moves(&self) -> u32 {
         todo!();
+    }
+
+    fn generate_block(&mut self) {
+        let mut index = rand::thread_rng().gen_range(0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS));
+        while self.m_board[index] != 0 {
+            index += 1;
+            index %= NUMBER_OF_LINES * NUMBER_OF_COLUMNS;
+        }
+        let random = rand::thread_rng().gen_range(0..10);
+        if random == 4 {
+            self.m_board[index] = 4;
+        } else {
+            self.m_board[index] = 2;
+        }
     }
 
     fn consult_board(&self, line: usize, column: usize) -> u32 {
