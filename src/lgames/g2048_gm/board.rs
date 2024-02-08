@@ -44,14 +44,17 @@ impl Board {
     }
 
     pub fn move_pieces(&mut self, direction: &Directions) {
-        self.m_number_of_moves += 1;
+        let moved: bool;
         match direction {
-            Directions::Up => self.move_up(),
-            Directions::Down => self.move_down(),
-            Directions::Right => self.move_right(),
-            Directions::Left => self.move_left(),
+            Directions::Up => moved = self.move_up(),
+            Directions::Down => moved = self.move_down(),
+            Directions::Right => moved = self.move_right(),
+            Directions::Left => moved = self.move_left(),
         }
-        self.generate_block();
+        if moved {
+            self.m_number_of_moves += 1;
+            self.generate_block();
+        }
     }
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
@@ -158,20 +161,110 @@ impl Board {
         self.m_number_of_moves
     }
 
-    fn move_up(&mut self) {
-        todo!();
+    fn move_up(&mut self) -> bool {
+        let mut moved: bool = false;
+        for column in 0..NUMBER_OF_COLUMNS {
+            for line in 1..NUMBER_OF_LINES {
+                let value = self.consult_board(line, column);
+                if value == 0 {
+                    continue;
+                }
+                let mut index = line - 1;
+                while index > 0 && self.consult_board(index, column) == 0 {
+                    index -= 1;
+                }
+                if value == self.consult_board(index, column) {
+                    *self.get_board_pos(index, column) = 2 * value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if self.consult_board(index, column) == 0 {
+                    *self.get_board_pos(index, column) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                }
+            }
+        }
+        moved
     }
 
-    pub fn display_board(&self, message: &str) -> Vec<Line> {
-        todo!();
+    fn move_down(&mut self) -> bool {
+        let mut moved: bool = false;
+        for column in 0..NUMBER_OF_COLUMNS {
+            for diff in 1..NUMBER_OF_LINES {
+                let line = NUMBER_OF_LINES - diff - 1;
+                let value = self.consult_board(line, column);
+                if value == 0 {
+                    continue;
+                }
+                let mut index = line + 1;
+                while index < NUMBER_OF_LINES - 1 && self.consult_board(index, column) == 0 {
+                    index += 1;
+                }
+                if value == self.consult_board(index, column) {
+                    *self.get_board_pos(index, column) = 2 * value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if self.consult_board(index, column) == 0 {
+                    *self.get_board_pos(index, column) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                }
+            }
+        }
+        moved
     }
 
-    pub fn consult_score(&self) -> u32 {
-        todo!();
+    fn move_right(&mut self) -> bool {
+        let mut moved: bool = false;
+        for line in 0..NUMBER_OF_LINES {
+            for diff in 1..NUMBER_OF_COLUMNS {
+                let column = NUMBER_OF_COLUMNS - diff - 1;
+                let value = self.consult_board(line, column);
+                if value == 0 {
+                    continue;
+                }
+                let mut index = column + 1;
+                while index < NUMBER_OF_COLUMNS - 1 && self.consult_board(line, index) == 0 {
+                    index += 1;
+                }
+                if value == self.consult_board(line, index) {
+                    *self.get_board_pos(line, index) = 2 * value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if self.consult_board(line, index) == 0 {
+                    *self.get_board_pos(line, index) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                }
+            }
+        }
+        moved
     }
 
-    pub fn consult_number_of_moves(&self) -> u32 {
-        todo!();
+    fn move_left(&mut self) -> bool {
+        let mut moved: bool = false;
+        for line in 0..NUMBER_OF_LINES {
+            for column in 1..NUMBER_OF_COLUMNS {
+                let value = self.consult_board(line, column);
+                if value == 0 {
+                    continue;
+                }
+                let mut index = column - 1;
+                while index > 0 && self.consult_board(line, index) == 0 {
+                    index -= 1;
+                }
+                if value == self.consult_board(line, index) {
+                    *self.get_board_pos(line, index) = 2 * value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if self.consult_board(line, index) == 0 {
+                    *self.get_board_pos(line, index) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                }
+            }
+        }
+        moved
     }
 
     fn generate_block(&mut self) {
@@ -190,5 +283,9 @@ impl Board {
 
     fn consult_board(&self, line: usize, column: usize) -> u32 {
         self.m_board[line * NUMBER_OF_COLUMNS + column]
+    }
+
+    fn get_board_pos(&mut self, line: usize, column: usize) -> &mut u32 {
+        &mut self.m_board[line * NUMBER_OF_COLUMNS + column]
     }
 }
