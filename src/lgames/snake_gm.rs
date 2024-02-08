@@ -230,77 +230,6 @@ impl<'a> SnakeGameManager<'a> {
         )
     }
 
-    fn read_play_input(&mut self) -> Result<()> {
-        if poll(Duration::from_millis(100))? {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('h'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Left,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.m_direction = Directions::Left,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('l'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Right,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.m_direction = Directions::Right,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.m_direction = Directions::Down,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.m_direction = Directions::Up,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
-                }
-                _ => (),
-            }
-        }
-        Ok(())
-    }
-
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
@@ -361,6 +290,101 @@ impl<'a> SnakeGameManager<'a> {
                 }) => {
                     self.m_menu_opt = MenuOpt::DecreaseFPS;
                     break;
+                }
+                _ => (),
+            }
+        }
+        Ok(())
+    }
+
+    fn read_play_input(&mut self) -> Result<()> {
+        if poll(Duration::from_millis(100))? {
+            match read()? {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('h'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('a'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Left,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.m_direction = Directions::Left,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('l'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('d'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Right,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.m_direction = Directions::Right,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('j'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('s'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Down,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.m_direction = Directions::Down,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('k'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('w'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Up,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.m_direction = Directions::Up,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Esc,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.m_menu_opt = MenuOpt::Quit;
                 }
                 _ => (),
             }
