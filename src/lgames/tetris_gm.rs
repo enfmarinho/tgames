@@ -343,9 +343,7 @@ impl<'a> TetrisGameManager<'a> {
     }
 
     fn read_play_input(&mut self) -> Result<()> {
-        let time = SystemTime::now();
-        let wait_time = Duration::from_millis(50);
-        if poll(wait_time)? {
+        if poll(Duration::from_millis(50))? {
             match read()? {
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('h'),
@@ -425,19 +423,6 @@ impl<'a> TetrisGameManager<'a> {
             }
         } else {
             self.m_play_opt = PlayOpt::None;
-        }
-        match time.elapsed() {
-            Ok(duration) => {
-                let sleep_time: u128;
-                // sleep for the difference of
-                if duration.as_millis() > wait_time.as_millis() {
-                    sleep_time = duration.as_millis() - wait_time.as_millis();
-                } else {
-                    sleep_time = wait_time.as_millis() - duration.as_millis();
-                }
-                sleep(Duration::from_millis(sleep_time as u64));
-            }
-            Err(_) => (),
         }
         Ok(())
     }
