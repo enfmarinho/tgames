@@ -16,11 +16,21 @@ impl Board {
     }
 
     pub fn reset_board(&mut self) {
-        todo!();
+        for index in 0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS) {
+            self.m_board[index] = 0;
+        }
+        self.m_number_of_moves = 0;
+        self.m_score = 0;
+        self.m_lost = false;
+    }
+
+    pub fn start_game(&mut self) {
+        self.generate_piece();
+        self.generate_piece();
     }
 
     pub fn defeated(&self) -> bool {
-        todo!();
+        self.m_lost
     }
 
     pub fn move_pieces(&mut self, direction: &Directions) {

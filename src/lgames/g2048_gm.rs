@@ -7,7 +7,7 @@ use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifier
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
-    style::Stylize,
+    style::{Color, Stylize},
     widgets::{Block, Borders, Paragraph},
     Terminal,
 };
@@ -62,8 +62,11 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Helping => self.m_game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
-                    self.m_board.reset_board();
-                    self.m_game_state = GameState::Playing
+                    self.m_game_state = GameState::Playing;
+                    if matches!(self.m_game_state, GameState::Lost) {
+                        self.m_board.reset_board();
+                    }
+                    self.m_board.start_game();
                 }
                 MenuOpt::Help => self.m_game_state = GameState::Helping,
                 MenuOpt::Quit => self.m_game_state = GameState::Quitting,
@@ -72,7 +75,10 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Playing => {
                 match &self.m_play_opts {
                     PlayOpt::Direction(direction) => self.m_board.move_pieces(direction),
-                    PlayOpt::Quit => self.m_game_state = GameState::Menu,
+                    PlayOpt::Quit => {
+                        self.m_game_state = GameState::Menu;
+                        self.m_board.reset_board();
+                    }
                     PlayOpt::None => {}
                 }
                 if self.m_board.defeated() {
