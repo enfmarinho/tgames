@@ -13,8 +13,7 @@ use ratatui::{
 };
 use std::{
     io::{Result, Stdout},
-    thread::sleep,
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 enum MenuOpt {
