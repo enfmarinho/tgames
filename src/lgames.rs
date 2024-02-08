@@ -71,7 +71,7 @@ struct LGamesManager {
 }
 
 impl LGamesManager {
-    pub fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> LGamesManager {
+    fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> LGamesManager {
         LGamesManager {
             m_terminal: terminal,
             m_execution_state: LGamesState::Starting,
@@ -82,10 +82,9 @@ impl LGamesManager {
 
     fn process_events(&mut self) -> Result<()> {
         match self.m_execution_state {
-            LGamesState::Starting => (),
             LGamesState::Helping => game_manager::read_key()?,
             LGamesState::MainMenu => self.read_main_menu_input()?,
-            LGamesState::Quitting => (),
+            LGamesState::Starting | LGamesState::Quitting => (),
         }
         Ok(())
     }
@@ -117,10 +116,9 @@ impl LGamesManager {
 
     fn render(&mut self) -> Result<()> {
         match self.m_execution_state {
-            LGamesState::Starting => (),
             LGamesState::Helping => self.display_help_message()?,
             LGamesState::MainMenu => self.display_main_menu()?,
-            LGamesState::Quitting => (),
+            LGamesState::Starting | LGamesState::Quitting => (),
         }
         Ok(())
     }
@@ -235,20 +233,13 @@ impl LGamesManager {
         }
         Ok(())
     }
+
     fn play(&mut self) -> Result<()> {
-        let option_game = Games::from_repr(self.m_game_index);
-        let game: Games;
-        match option_game {
-            Some(value) => {
-                game = value;
-            }
-            None => {
-                // Should not reach this.
-                self.m_game_index = 0;
-                return Ok(());
-            }
+        match Games::from_repr(self.m_game_index) {
+            Some(game) => self.run_game(game)?,
+            None => self.m_game_index = 0,
         }
-        self.run_game(game)
+        Ok(())
     }
 
     fn run_game(&mut self, game: Games) -> Result<()> {
