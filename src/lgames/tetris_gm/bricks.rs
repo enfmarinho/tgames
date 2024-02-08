@@ -73,11 +73,11 @@ impl Brick {
 
     pub fn consult(&self, line: usize, column: usize) -> bool {
         match self.m_rotation {
-            0 => return self.m_coord[line * 4 + column],
-            1 => return self.m_coord[12 + line - column * 4],
-            2 => return self.m_coord[15 - line * 4 - column],
-            3 => return self.m_coord[3 - line + column * 4],
-            _ => return false, // Should not reach this.
+            0 => self.m_coord[line * 4 + column],
+            1 => self.m_coord[12 + line - column * 4],
+            2 => self.m_coord[15 - line * 4 - column],
+            3 => self.m_coord[3 - line + column * 4],
+            _ => false, // Should not reach this.
         }
     }
 

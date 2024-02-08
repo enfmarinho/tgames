@@ -140,9 +140,9 @@ impl Board {
             && y < 3
             && self.m_brick.consult((y + 1) as usize, (x + 2) as usize)
         {
-            return self.m_brick.consult_color();
+            self.m_brick.consult_color()
         } else {
-            return &self.m_board[line][column];
+            &self.m_board[line][column]
         }
     }
 
@@ -198,7 +198,7 @@ impl Board {
         }
         spans.push(Span::styled("╯", Style::default().fg(Color::DarkGray)));
         lines.push(Line::from(spans));
-        return lines;
+        lines
     }
 
     pub fn display_next_brick(&self) -> Vec<Line> {
@@ -246,18 +246,17 @@ impl Board {
             for px in 0..4 {
                 let x = ix + px as i8;
                 let y = iy + py as i8;
-                if self.m_brick.consult(py, px) {
-                    if x < 0
+                if self.m_brick.consult(py, px)
+                    && (x < 0
                         || y < 0
                         || x >= NUMBER_OF_COLUMNS as i8
                         || y >= NUMBER_OF_LINES as i8
                         || !matches!(
                             self.m_board[y as usize][x as usize],
                             BoardPossibilities::Empty
-                        )
-                    {
-                        return false;
-                    }
+                        ))
+                {
+                    return false;
                 }
             }
         }

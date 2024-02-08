@@ -21,10 +21,8 @@ pub trait GameManager {
 
 // Useful things
 pub fn read_key() -> Result<()> {
-    let event = event::read()?;
-    match event {
-        _ => Ok(()),
-    }
+    event::read()?;
+    Ok(())
 }
 
 #[derive(Clone)]

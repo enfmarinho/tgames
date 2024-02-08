@@ -34,7 +34,7 @@ impl Board {
             .m_board
             .resize(board.m_height * board.m_width, BoardPossibilities::Empty);
         board.reset_board();
-        return board;
+        board
     }
 
     pub fn snake_died(&self) -> bool {
@@ -52,9 +52,10 @@ impl Board {
 
     pub fn move_snake(&mut self, direction: &Directions) {
         let head: Coord;
-        match self.m_snake.front() {
-            Some(value) => head = value.clone(),
-            None => panic!(),
+        if let Some(value) = self.m_snake.front() {
+            head = value.clone();
+        } else {
+            panic!();
         }
         let mut new_head_pos = head.clone();
         // making indexing from one to avoid overflow, since its unsigned.
@@ -85,13 +86,8 @@ impl Board {
         ) {
             self.m_score += 1;
             self.generate_food();
-        } else {
-            match self.m_snake.pop_back() {
-                Some(value) => {
-                    *self.get_board_position(&value.y, &value.x) = BoardPossibilities::Empty;
-                }
-                None => (),
-            }
+        } else if let Some(value) = self.m_snake.pop_back() {
+            *self.get_board_position(&value.y, &value.x) = BoardPossibilities::Empty;
         }
         *self.get_board_position(&new_head_pos.y, &new_head_pos.x) = BoardPossibilities::SnakeHead;
         self.m_snake.push_front(new_head_pos);
@@ -103,7 +99,7 @@ impl Board {
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
-        if message != "" {
+        if !message.is_empty() {
             lines.push(Line::from(Span::styled(message, color)));
             lines.push(Line::from(Span::styled(
                 "Press enter to play again.",

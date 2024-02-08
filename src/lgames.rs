@@ -141,7 +141,7 @@ impl LGamesManager {
         for (index, opts) in Games::iter().enumerate() {
             if index == self.m_game_index {
                 lines.push(Line::from(Span::styled(
-                    "> ".to_string() + &opts.to_string() + &" <".to_string(),
+                    "> ".to_owned() + &opts.to_string() + " <",
                     Style::default().green(),
                 )));
             } else {

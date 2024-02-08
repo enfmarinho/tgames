@@ -50,7 +50,7 @@ impl Board {
             Directions::Down => moved = self.move_down(),
             Directions::Right => moved = self.move_right(),
             Directions::Left => moved = self.move_left(),
-        }
+        };
         if moved {
             self.m_number_of_moves += 1;
             self.generate_block();
