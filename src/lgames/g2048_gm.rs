@@ -165,7 +165,7 @@ impl<'a> G2048GameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message)).block(
+                Paragraph::new(self.m_board.display_board(message.to_string())).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -201,7 +201,7 @@ impl<'a> G2048GameManager<'a> {
                         .title("Help")
                         .title_alignment(Alignment::Center),
                 ),
-                sub_layout[3],
+                sub_layout[2],
             );
         })?;
         Ok(())
@@ -274,6 +274,12 @@ impl<'a> G2048GameManager<'a> {
                     ..
                 })
                 | Event::Key(KeyEvent {
+                    code: KeyCode::Char('a'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
                     code: KeyCode::Left,
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
@@ -284,6 +290,12 @@ impl<'a> G2048GameManager<'a> {
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('l'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('d'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
@@ -304,6 +316,12 @@ impl<'a> G2048GameManager<'a> {
                     ..
                 })
                 | Event::Key(KeyEvent {
+                    code: KeyCode::Char('s'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
                     code: KeyCode::Down,
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
@@ -314,6 +332,12 @@ impl<'a> G2048GameManager<'a> {
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('k'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('w'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
