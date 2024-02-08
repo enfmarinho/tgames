@@ -97,6 +97,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 "Menu",
                 "Record",
                 "",
+                Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
                 self.m_board.consult_score(),
@@ -104,6 +105,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 "Game board",
                 "Score",
                 "",
+                Color::Gray,
             )?,
             GameState::Lost => self.display_screen(
                 self.m_record,
@@ -111,12 +113,12 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 "Menu",
                 "Record",
                 "You Lost.\nPress enter to try again.",
+                Color::Red,
             )?,
             GameState::Quitting => (),
         }
         Ok(())
     }
-
     fn ended(&self) -> bool {
         matches!(self.m_game_state, GameState::Quitting)
     }
@@ -149,6 +151,7 @@ impl<'a> G2048GameManager<'a> {
         title: &str,
         score_title: &str,
         message: &str,
+        color: Color,
     ) -> Result<()> {
         self.m_terminal.draw(|frame| {
             let layout = Layout::default()
@@ -165,7 +168,7 @@ impl<'a> G2048GameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message.to_string())).block(
+                Paragraph::new(self.m_board.display_board(message.to_string(), color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
