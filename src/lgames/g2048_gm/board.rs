@@ -176,6 +176,7 @@ impl Board {
                 if value == self.consult_board(index, column) {
                     *self.get_board_pos(index, column) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
+                    self.m_score += 2 * value;
                     moved = true;
                 } else if self.consult_board(index, column) == 0 {
                     *self.get_board_pos(index, column) = value;
@@ -203,6 +204,7 @@ impl Board {
                 if value == self.consult_board(index, column) {
                     *self.get_board_pos(index, column) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
+                    self.m_score += 2 * value;
                     moved = true;
                 } else if self.consult_board(index, column) == 0 {
                     *self.get_board_pos(index, column) = value;
@@ -230,6 +232,7 @@ impl Board {
                 if value == self.consult_board(line, index) {
                     *self.get_board_pos(line, index) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
+                    self.m_score += 2 * value;
                     moved = true;
                 } else if self.consult_board(line, index) == 0 {
                     *self.get_board_pos(line, index) = value;
@@ -256,6 +259,7 @@ impl Board {
                 if value == self.consult_board(line, index) {
                     *self.get_board_pos(line, index) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
+                    self.m_score += 2 * value;
                     moved = true;
                 } else if self.consult_board(line, index) == 0 {
                     *self.get_board_pos(line, index) = value;
