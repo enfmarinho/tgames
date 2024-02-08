@@ -3,7 +3,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use lgames::game_manager::GameManager;
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::io::{stdout, Result};
 
@@ -13,8 +12,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     terminal.clear()?;
 
-    let mut lgames = lgames::LGamesManager::new(terminal);
-    lgames.run()?;
+    lgames::run(terminal, lgames::Games::None)?;
 
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
