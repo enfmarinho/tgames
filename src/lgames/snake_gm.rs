@@ -6,7 +6,7 @@ use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyMo
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
-    style::Stylize,
+    style::{Color, Stylize},
     widgets::{Block, Borders, Paragraph},
     Terminal,
 };
@@ -100,10 +100,38 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
         match self.m_game_state {
             GameState::Starting => (),
             GameState::Helping => self.display_rules()?,
-            GameState::Menu => self.display_screen()?,
-            GameState::Playing => self.display_screen()?,
-            GameState::Won => self.display_screen()?,
-            GameState::Lost => self.display_screen()?,
+            GameState::Menu => self.display_screen(
+                self.m_record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "".to_string(),
+                Color::Gray,
+            )?,
+            GameState::Playing => self.display_screen(
+                self.m_board.consult_score(),
+                Self::play_guide(),
+                "Game board",
+                "Score",
+                "".to_string(),
+                Color::Gray,
+            )?,
+            GameState::Won => self.display_screen(
+                self.m_record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "You won, congratulations!!".to_string(),
+                Color::Green,
+            )?,
+            GameState::Lost => self.display_screen(
+                self.m_record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "You lost.".to_string(),
+                Color::Red,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -139,30 +167,15 @@ impl<'a> SnakeGameManager<'a> {
         Ok(())
     }
 
-    fn display_screen(&mut self) -> Result<()> {
-        let direction = &self.m_direction;
-        let score: u32;
-        let help_message: String;
-        let title: String;
-        let score_title: String;
-        let mut message: String = String::new();
-        if matches!(self.m_game_state, GameState::Playing) {
-            score = self.m_board.consult_score();
-            help_message = Self::play_guide();
-            title = String::from("Game board");
-            score_title = String::from("Score");
-        } else {
-            score = self.m_record;
-            help_message = Self::menu_guide();
-            title = String::from("Menu");
-            score_title = String::from("Record");
-        }
-        if matches!(self.m_game_state, GameState::Won) {
-            message = String::from("You won, congratulations!\nPress enter to play again.\n");
-        } else if matches!(self.m_game_state, GameState::Lost) {
-            message = String::from("You lost!\nPress enter to try again.\n");
-        }
-
+    fn display_screen(
+        &mut self,
+        score: u32,
+        help_message: String,
+        title: &str,
+        score_title: &str,
+        message: String,
+        color: Color,
+    ) -> Result<()> {
         self.m_terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
@@ -174,7 +187,7 @@ impl<'a> SnakeGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(message + &self.m_board.display_board(direction)).block(
+                Paragraph::new(self.m_board.display_board(message, color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)

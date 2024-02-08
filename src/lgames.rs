@@ -26,6 +26,7 @@ use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, FromRepr};
 enum Games {
     Snake,
     Tetris,
+    #[strum(to_string = "2048")]
     G2048,
     Snaze,
     Sudoku,

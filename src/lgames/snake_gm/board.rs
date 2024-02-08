@@ -1,5 +1,7 @@
 use super::game_manager::{Coord, Directions};
 use rand::Rng;
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::text::{Line, Span};
 use std::collections::VecDeque;
 use std::vec::Vec;
 
@@ -99,39 +101,58 @@ impl Board {
         self.m_score
     }
 
-    pub fn display_board(&self, direction: &Directions) -> String {
-        let mut board = String::new();
-        board += "╭";
+    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
+        let mut lines: Vec<Line> = Vec::new();
+        if message != "" {
+            lines.push(Line::from(Span::styled(message, color)));
+            lines.push(Line::from(Span::styled(
+                "Press enter to play again.",
+                Style::default(),
+            )));
+        }
+        let mut spans: String = String::new();
+        spans += "╭";
         for _counter in 1..self.m_width + 1 {
-            board += "─";
+            spans += "──";
         }
-        for index in 0..self.m_board.len() {
-            if index == 0 {
-                board += "╮\n";
-                board += "│";
-            } else if index % self.m_width == 0 {
-                board += "│\n";
-                board += "│";
+        spans += "╮";
+        lines.push(Line::from(Span::styled(
+            spans,
+            Style::default().fg(Color::DarkGray),
+        )));
+        for i in 0..self.m_height {
+            let mut spans: Vec<Span> = Vec::new();
+            spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+            for j in 0..self.m_width {
+                match self.consult_board(i, j) {
+                    BoardPossibilities::Empty => spans.push(Span::styled("  ", Style::default())),
+                    BoardPossibilities::SnakeBody => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Blue)));
+                    }
+                    BoardPossibilities::SnakeHead => {
+                        spans.push(Span::styled("██", Style::default().fg(Color::Cyan)));
+                    }
+                    BoardPossibilities::SnakeDead => {
+                        spans.push(Span::styled("󰯈 ", Style::default().fg(Color::Red)));
+                    }
+                    BoardPossibilities::Food => {
+                        spans.push(Span::styled("󰉛 ", Style::default().fg(Color::LightRed)));
+                    }
+                }
             }
-            match self.m_board[index] {
-                BoardPossibilities::Empty => board += " ",
-                BoardPossibilities::SnakeBody => board += "󱓻",
-                BoardPossibilities::SnakeHead => match direction {
-                    Directions::Up => board += "",
-                    Directions::Down => board += "",
-                    Directions::Left => board += "",
-                    Directions::Right => board += "",
-                },
-                BoardPossibilities::SnakeDead => board += "󰯈",
-                BoardPossibilities::Food => board += "󰉛",
-            }
+            spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
+            lines.push(Line::from(spans));
         }
-        board += "│\n╰";
+        let mut spans: String = String::new();
+        spans += "╰";
         for _counter in 1..self.m_width + 1 {
-            board += "─";
+            spans += "──";
         }
-        board += "╯\n";
-        board
+        spans += "╯";
+        lines.push(Line::from(
+            Span::styled(spans, Style::default()).fg(Color::DarkGray),
+        ));
+        lines
     }
 
     pub fn reset_board(&mut self) {
