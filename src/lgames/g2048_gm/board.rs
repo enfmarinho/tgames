@@ -1,18 +1,28 @@
 use super::super::game_manager::Directions;
-use ratatui::text::Line;
+use rand::Rng;
+use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span};
 
 const NUMBER_OF_COLUMNS: usize = 4;
 const NUMBER_OF_LINES: usize = 4;
 
 pub struct Board {
     m_board: Vec<u32>,
-    m_moves: u32,
+    m_number_of_moves: u32,
     m_score: u32,
+    m_lost: bool,
 }
 
 impl Board {
     pub fn new() -> Self {
-        todo!();
+        let mut board = Self {
+            m_board: Vec::with_capacity(NUMBER_OF_LINES * NUMBER_OF_COLUMNS),
+            m_number_of_moves: 0,
+            m_score: 0,
+            m_lost: false,
+        };
+        board.m_board.resize(NUMBER_OF_LINES * NUMBER_OF_COLUMNS, 0);
+        board
     }
 
     pub fn reset_board(&mut self) {
