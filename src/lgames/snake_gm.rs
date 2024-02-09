@@ -154,7 +154,7 @@ impl<'a> SnakeGameManager<'a> {
             m_direction: Directions::Right,
             m_board: Board::new(12, 20),
             m_record: 0,
-            m_fps: 20,
+            m_fps: 15,
         }
     }
 
