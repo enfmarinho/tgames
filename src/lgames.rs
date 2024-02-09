@@ -50,7 +50,6 @@ pub fn run(terminal: Terminal<CrosstermBackend<Stdout>>, game: Games) -> Result<
 enum MainMenuOpts {
     Play,
     Quit,
-    Help,
     Up,
     Down,
     None,
@@ -59,7 +58,6 @@ enum MainMenuOpts {
 enum LGamesState {
     Starting,
     MainMenu,
-    Helping,
     Quitting,
 }
 
@@ -82,7 +80,6 @@ impl LGamesManager {
 
     fn process_events(&mut self) -> Result<()> {
         match self.m_execution_state {
-            LGamesState::Helping => game_manager::read_key()?,
             LGamesState::MainMenu => self.read_main_menu_input()?,
             LGamesState::Starting | LGamesState::Quitting => (),
         }
@@ -92,10 +89,8 @@ impl LGamesManager {
     fn update(&mut self) -> Result<()> {
         match self.m_execution_state {
             LGamesState::Starting => self.m_execution_state = LGamesState::MainMenu,
-            LGamesState::Helping => self.m_execution_state = LGamesState::MainMenu,
             LGamesState::MainMenu => match self.m_main_menu_opts {
                 MainMenuOpts::Play => self.play()?,
-                MainMenuOpts::Help => self.m_execution_state = LGamesState::Helping,
                 MainMenuOpts::Quit => self.m_execution_state = LGamesState::Quitting,
                 MainMenuOpts::Up => {
                     if self.m_game_index > 0 {
@@ -116,7 +111,6 @@ impl LGamesManager {
 
     fn render(&mut self) -> Result<()> {
         match self.m_execution_state {
-            LGamesState::Helping => self.display_help_message()?,
             LGamesState::MainMenu => self.display_main_menu()?,
             LGamesState::Starting | LGamesState::Quitting => (),
         }
@@ -125,15 +119,6 @@ impl LGamesManager {
 
     fn ended(&self) -> bool {
         matches!(self.m_execution_state, LGamesState::Quitting)
-    }
-
-    fn display_help_message(&mut self) -> Result<()> {
-        let message = String::from("This is still not done.\nPress any key to continue.");
-        self.m_terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(Paragraph::new(message).white(), area);
-        })?;
-        Ok(())
     }
 
     fn display_main_menu(&mut self) -> Result<()> {
@@ -259,15 +244,6 @@ impl LGamesManager {
                     ..
                 }) => {
                     self.m_main_menu_opts = MainMenuOpts::Down;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    self.m_main_menu_opts = MainMenuOpts::Help;
                     break;
                 }
                 _ => (),
