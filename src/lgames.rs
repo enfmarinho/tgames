@@ -12,10 +12,10 @@ use self::{
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     backend::CrosstermBackend,
-    layout::Alignment,
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Style, Stylize},
     text::{Line, Span},
-    widgets::{block::Title, Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph},
     Terminal,
 };
 use std::io::{Result, Stdout};
@@ -152,13 +152,55 @@ impl LGamesManager {
             lines.push(Line::from(Span::styled("\n\n", Style::default()).gray()));
         }
         self.m_terminal.draw(|frame| {
-            let block = Block::default()
-                .title(Title::from("LGames").alignment(Alignment::Center))
-                .borders(Borders::ALL)
-                .border_type(ratatui::widgets::BorderType::Rounded);
-            frame.render_widget(Paragraph::new(lines).block(block), frame.size());
+            let layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(frame.size());
+            let sub_layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])
+                .split(layout[1]);
+
+            frame.render_widget(
+                Paragraph::new(lines).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        // .border_type(ratatui::widgets::BorderType::Rounded)
+                        .title("Lgames")
+                        .title_alignment(Alignment::Center),
+                ),
+                layout[0],
+            );
+
+            frame.render_widget(
+                Paragraph::new(Self::tips_message()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Tips")
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[0],
+            );
+
+            frame.render_widget(
+                Paragraph::new(Self::keybingins_guide()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Keybindings")
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[1],
+            );
         })?;
         Ok(())
+    }
+
+    fn keybingins_guide() -> String {
+        String::from("TODO")
+    }
+
+    fn tips_message() -> String {
+        String::from("TODO")
     }
 
     fn read_main_menu_input(&mut self) -> Result<()> {
