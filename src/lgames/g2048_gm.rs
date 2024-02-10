@@ -62,11 +62,11 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Helping => self.m_game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
-                    self.m_game_state = GameState::Playing;
                     if matches!(self.m_game_state, GameState::Lost) {
                         self.m_board.reset_board();
                     }
                     self.m_board.start_game();
+                    self.m_game_state = GameState::Playing;
                 }
                 MenuOpt::Help => self.m_game_state = GameState::Helping,
                 MenuOpt::Quit => self.m_game_state = GameState::Quitting,
