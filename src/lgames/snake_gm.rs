@@ -74,21 +74,18 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 MenuOpt::None => (),
             },
             GameState::Playing => {
+                self.m_board.move_snake(&self.m_direction);
+                if self.m_board.snake_died() {
+                    self.m_game_state = GameState::Lost;
+                } else if self.m_board.won() {
+                    self.m_game_state = GameState::Won;
+                }
+                if self.m_record < self.m_board.consult_score() {
+                    self.m_record = self.m_board.consult_score();
+                }
                 if matches!(self.m_menu_opt, MenuOpt::Quit) {
                     self.m_board.reset_board();
                     self.m_game_state = GameState::Menu;
-                }
-                self.m_board.move_snake(&self.m_direction);
-                let mut ended: bool = false;
-                if self.m_board.snake_died() {
-                    self.m_game_state = GameState::Lost;
-                    ended = true;
-                } else if self.m_board.won() {
-                    self.m_game_state = GameState::Won;
-                    ended = true;
-                }
-                if ended && self.m_record < self.m_board.consult_score() {
-                    self.m_record = self.m_board.consult_score();
                 }
             }
             GameState::Quitting => (),
