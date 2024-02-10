@@ -221,12 +221,12 @@ impl<'a> SnakeGameManager<'a> {
 
     fn play_guide() -> String {
         String::from(
-            "k or    - Move up\nj or    - Move down\nl or    - Move right\nh or    - Move left\nESC or q - Go to menu",
+            "w or k or    - Move up\ns or j or    - Move down\nd or l or    - Move right\na or h or    - Move left\nESC or q      - Go to menu",
         )
     }
 
     fn menu_guide() -> String {
-        String::from("ENTER or p - Play\nESC or q   - Go to main menu\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\n",
+        String::from("ENTER or p - Play\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
         )
     }
 

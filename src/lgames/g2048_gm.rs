@@ -143,11 +143,15 @@ impl<'a> G2048GameManager<'a> {
     }
 
     fn menu_guide() -> String {
-        String::from("TODO That is not done yet.")
+        String::from(
+            "ENTER or p - Play\n?          - Display game rules\nESC or q   - Go to main menu\n",
+        )
     }
 
     fn play_guide() -> String {
-        String::from("TODO That is not done yet.")
+        String::from(
+            "w or k or    - Move up\ns or j or    - Move down\nd or l or    - Move right\na or h or    - Move left\nESC or q      - Go to menu",
+        )
     }
 
     fn display_screen(

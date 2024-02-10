@@ -199,11 +199,15 @@ impl<'a> TetrisGameManager<'a> {
     }
 
     fn menu_guide() -> String {
-        String::from("") // TODO write message
+        String::from(
+            "ENTER or p - Play\n?          - Display game rules\nESC or q   - Go to main menu\n",
+        )
     }
 
     fn play_guide() -> String {
-        String::from("") // TODO write message
+        String::from(
+            "d or l or  - Move piece to the right\na or h or  - Move piece to the left\nw or k or  - Rotate piece\ns or j or  - Soft drop\nSPACE       - Hard drop\np           - Pause game\nESC or q    - Go back to menu\n ",
+        )
     }
 
     fn display_screen(

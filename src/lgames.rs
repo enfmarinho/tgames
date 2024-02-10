@@ -181,7 +181,9 @@ impl LGamesManager {
     }
 
     fn keybingins_guide() -> String {
-        String::from("TODO")
+        String::from(
+            "ENTER       - Play\nw or k or  - Go up\ns or j or  - Go down\nESC or q    - Quit\n",
+        )
     }
 
     fn tips_message() -> String {
@@ -217,6 +219,12 @@ impl LGamesManager {
                     break;
                 }
                 Event::Key(KeyEvent {
+                    code: KeyCode::Char('w'),
+                    kind: KeyEventKind::Press,
+                    modifiers: KeyModifiers::NONE,
+                    ..
+                })
+                | Event::Key(KeyEvent {
                     code: KeyCode::Up,
                     kind: KeyEventKind::Press,
                     modifiers: KeyModifiers::NONE,
@@ -232,6 +240,12 @@ impl LGamesManager {
                     break;
                 }
                 Event::Key(KeyEvent {
+                    code: KeyCode::Char('s'),
+                    kind: KeyEventKind::Press,
+                    modifiers: KeyModifiers::NONE,
+                    ..
+                })
+                | Event::Key(KeyEvent {
                     code: KeyCode::Down,
                     kind: KeyEventKind::Press,
                     modifiers: KeyModifiers::NONE,
