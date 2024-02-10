@@ -182,6 +182,10 @@ impl Board {
                     *self.get_board_pos(index, column) = value;
                     *self.get_board_pos(line, column) = 0;
                     moved = true;
+                } else if index + 1 != line {
+                    *self.get_board_pos(index + 1, column) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
                 }
             }
         }
@@ -208,6 +212,10 @@ impl Board {
                     moved = true;
                 } else if self.consult_board(index, column) == 0 {
                     *self.get_board_pos(index, column) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if index - 1 != line {
+                    *self.get_board_pos(index - 1, column) = value;
                     *self.get_board_pos(line, column) = 0;
                     moved = true;
                 }
@@ -238,6 +246,10 @@ impl Board {
                     *self.get_board_pos(line, index) = value;
                     *self.get_board_pos(line, column) = 0;
                     moved = true;
+                } else if index - 1 != column {
+                    *self.get_board_pos(line, index - 1) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
                 }
             }
         }
@@ -263,6 +275,10 @@ impl Board {
                     moved = true;
                 } else if self.consult_board(line, index) == 0 {
                     *self.get_board_pos(line, index) = value;
+                    *self.get_board_pos(line, column) = 0;
+                    moved = true;
+                } else if index + 1 != column {
+                    *self.get_board_pos(line, index + 1) = value;
                     *self.get_board_pos(line, column) = 0;
                     moved = true;
                 }
