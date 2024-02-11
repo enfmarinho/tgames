@@ -58,7 +58,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
 
     fn update(&mut self) -> Result<()> {
         match self.m_game_state {
-            GameState::Starting => self.m_game_state = GameState::Menu,
+            GameState::Starting => self.m_game_state = GameState::Playing,
             GameState::Helping => self.m_game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.m_menu_opt {
                 MenuOpt::Play => {
