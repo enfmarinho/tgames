@@ -1,3 +1,4 @@
+mod flap_bird_gm;
 mod g2048_gm;
 mod game_manager;
 mod snake_gm;
@@ -6,8 +7,8 @@ mod tetris_gm;
 // mod sudoku_gm;
 
 use self::{
-    g2048_gm::G2048GameManager, game_manager::GameManager, snake_gm::SnakeGameManager,
-    tetris_gm::TetrisGameManager,
+    flap_bird_gm::FlapBirdGameManager, g2048_gm::G2048GameManager, game_manager::GameManager,
+    snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager,
 };
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -28,6 +29,8 @@ pub enum Games {
     Tetris,
     #[strum(to_string = "2048")]
     G2048,
+    #[strum(to_string = "Flap bird")]
+    FlapBird,
     Snaze,
     Sudoku,
     #[strum(to_string = "")]
@@ -279,9 +282,11 @@ impl LGamesManager {
             Games::Snake => SnakeGameManager::new(&mut self.m_terminal).run()?,
             Games::Tetris => TetrisGameManager::new(&mut self.m_terminal).run()?,
             Games::G2048 => G2048GameManager::new(&mut self.m_terminal).run()?,
+            Games::FlapBird => FlapBirdGameManager::new(&mut self.m_terminal).run()?,
             Games::Snaze => {
                 // TODO delete this.
-                let message = String::from("snaze was selected");
+                let message =
+                    String::from("Snaze game was selected.\nThis game is not yet available");
                 self.m_terminal.draw(|frame| {
                     let area = frame.size();
                     frame.render_widget(Paragraph::new(message).white(), area);
@@ -290,7 +295,8 @@ impl LGamesManager {
             }
             Games::Sudoku => {
                 // TODO delete this.
-                let message = String::from("sudoku was selected");
+                let message =
+                    String::from("Sudoku game was selected.\nThis game is not yet available");
                 self.m_terminal.draw(|frame| {
                     let area = frame.size();
                     frame.render_widget(Paragraph::new(message).white(), area);
