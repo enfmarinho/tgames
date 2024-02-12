@@ -20,24 +20,24 @@ pub enum BoardPossibilities {
 }
 
 pub struct Board {
-    m_board: Vec<Vec<BoardPossibilities>>,
-    m_lost: bool,
-    m_score: u32,
-    m_lines: u32,
-    m_brick: Brick,
-    m_next_brick: Brick,
-    m_brick_coord: Coord,
+    board: Vec<Vec<BoardPossibilities>>,
+    lost: bool,
+    score: u32,
+    lines: u32,
+    brick: Brick,
+    next_brick: Brick,
+    brick_coord: Coord,
 }
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            m_board: Vec::with_capacity(NUMBER_OF_LINES),
-            m_lost: false,
-            m_score: 0,
-            m_lines: 0,
-            m_brick: Brick::new(),
-            m_next_brick: Brick::new(),
-            m_brick_coord: Coord {
+            board: Vec::with_capacity(NUMBER_OF_LINES),
+            lost: false,
+            score: 0,
+            lines: 0,
+            brick: Brick::new(),
+            next_brick: Brick::new(),
+            brick_coord: Coord {
                 x: NUMBER_OF_COLUMNS / 2,
                 y: 0,
             },
@@ -46,7 +46,7 @@ impl Board {
         for _counter in 0..NUMBER_OF_COLUMNS {
             line.push(BoardPossibilities::Empty);
         }
-        board.m_board.resize(
+        board.board.resize(
             // here
             NUMBER_OF_LINES,
             line,
@@ -55,103 +55,94 @@ impl Board {
     }
 
     pub fn move_left(&mut self) {
-        if self.fit(
-            self.m_brick_coord.y as i8 - 1,
-            self.m_brick_coord.x as i8 - 3,
-        ) {
-            self.m_brick_coord.x -= 1;
+        if self.fit(self.brick_coord.y as i8 - 1, self.brick_coord.x as i8 - 3) {
+            self.brick_coord.x -= 1;
         }
     }
 
     pub fn move_right(&mut self) {
-        if self.fit(
-            self.m_brick_coord.y as i8 - 1,
-            self.m_brick_coord.x as i8 - 1,
-        ) {
-            self.m_brick_coord.x += 1;
+        if self.fit(self.brick_coord.y as i8 - 1, self.brick_coord.x as i8 - 1) {
+            self.brick_coord.x += 1;
         }
     }
 
     pub fn drop(&mut self) {
-        if self.fit(self.m_brick_coord.y as i8, self.m_brick_coord.x as i8 - 2) {
-            self.m_brick_coord.y += 1;
+        if self.fit(self.brick_coord.y as i8, self.brick_coord.x as i8 - 2) {
+            self.brick_coord.y += 1;
         } else {
             self.fix_brick();
             self.remove_completed_lines();
             self.check_for_lost();
-            self.m_brick = self.m_next_brick.clone();
-            self.m_next_brick = Brick::new();
-            self.m_brick_coord.x = NUMBER_OF_COLUMNS / 2;
-            self.m_brick_coord.y = 0;
+            self.brick = self.next_brick.clone();
+            self.next_brick = Brick::new();
+            self.brick_coord.x = NUMBER_OF_COLUMNS / 2;
+            self.brick_coord.y = 0;
         }
     }
 
     pub fn soft_drop(&mut self) {
         for _ in 0..2 {
             self.drop();
-            self.m_score += 1;
+            self.score += 1;
         }
     }
 
     pub fn hard_drop(&mut self) {
-        while self.fit(self.m_brick_coord.y as i8, self.m_brick_coord.x as i8 - 2) {
+        while self.fit(self.brick_coord.y as i8, self.brick_coord.x as i8 - 2) {
             self.drop();
-            self.m_score += 2;
+            self.score += 2;
         }
     }
 
     pub fn rotate(&mut self) {
-        self.m_brick.rotate();
-        if !self.fit(
-            self.m_brick_coord.y as i8 - 1,
-            self.m_brick_coord.x as i8 - 2,
-        ) {
-            self.m_brick.unrotate();
+        self.brick.rotate();
+        if !self.fit(self.brick_coord.y as i8 - 1, self.brick_coord.x as i8 - 2) {
+            self.brick.unrotate();
         }
     }
 
     pub fn defeated(&self) -> bool {
-        self.m_lost
+        self.lost
     }
 
     pub fn reset_board(&mut self) {
-        for line in self.m_board.iter_mut() {
+        for line in self.board.iter_mut() {
             for column in line.iter_mut() {
                 *column = BoardPossibilities::Empty;
             }
         }
-        self.m_score = 0;
-        self.m_lines = 0;
-        self.m_lost = false;
-        self.m_brick = self.m_next_brick.clone();
-        self.m_next_brick = Brick::new();
-        self.m_brick_coord = Coord {
+        self.score = 0;
+        self.lines = 0;
+        self.lost = false;
+        self.brick = self.next_brick.clone();
+        self.next_brick = Brick::new();
+        self.brick_coord = Coord {
             x: NUMBER_OF_COLUMNS / 2,
             y: 0,
         };
     }
 
     pub fn consult(&self, line: usize, column: usize) -> &BoardPossibilities {
-        let x = Self::distance(column as i8, self.m_brick_coord.x as i8);
-        let y = Self::distance(line as i8, self.m_brick_coord.y as i8);
+        let x = Self::distance(column as i8, self.brick_coord.x as i8);
+        let y = Self::distance(line as i8, self.brick_coord.y as i8);
         if x > -3
             && x < 2
             && y > -2
             && y < 3
-            && self.m_brick.consult((y + 1) as usize, (x + 2) as usize)
+            && self.brick.consult((y + 1) as usize, (x + 2) as usize)
         {
-            self.m_brick.consult_color()
+            self.brick.consult_color()
         } else {
-            &self.m_board[line][column]
+            &self.board[line][column]
         }
     }
 
     pub fn consult_lines_completed(&self) -> u32 {
-        self.m_lines
+        self.lines
     }
 
     pub fn consult_score(&self) -> u32 {
-        self.m_score
+        self.score
     }
 
     pub fn display_board(&self, message: String) -> Vec<Line> {
@@ -206,8 +197,8 @@ impl Board {
         for i in 0..4 {
             let mut spans: Vec<Span> = Vec::new();
             for j in 0..4 {
-                if self.m_next_brick.consult(i, j) {
-                    match self.m_next_brick.consult_color() {
+                if self.next_brick.consult(i, j) {
+                    match self.next_brick.consult_color() {
                         BoardPossibilities::Red => {
                             spans.push(Span::styled("██", Style::default().fg(Color::Red)));
                         }
@@ -246,13 +237,13 @@ impl Board {
             for px in 0..4 {
                 let x = ix + px as i8;
                 let y = iy + py as i8;
-                if self.m_brick.consult(py, px)
+                if self.brick.consult(py, px)
                     && (x < 0
                         || y < 0
                         || x >= NUMBER_OF_COLUMNS as i8
                         || y >= NUMBER_OF_LINES as i8
                         || !matches!(
-                            self.m_board[y as usize][x as usize],
+                            self.board[y as usize][x as usize],
                             BoardPossibilities::Empty
                         ))
                 {
@@ -268,7 +259,7 @@ impl Board {
     }
 
     fn line_completed(&self, index: usize) -> bool {
-        for column in self.m_board[index].iter() {
+        for column in self.board[index].iter() {
             if matches!(*column, BoardPossibilities::Empty) {
                 return false;
             }
@@ -283,23 +274,23 @@ impl Board {
             if self.line_completed(index) {
                 completed += 1;
             } else {
-                self.m_board[index + completed] = self.m_board[index].clone();
+                self.board[index + completed] = self.board[index].clone();
             }
         }
         match completed {
-            1 => self.m_score += 300,
-            2 => self.m_score += 800,
-            3 => self.m_score += 2000,
-            4 => self.m_score += 5000,
+            1 => self.score += 300,
+            2 => self.score += 800,
+            3 => self.score += 2000,
+            4 => self.score += 5000,
             _ => (),
         }
-        self.m_lines += completed as u32;
+        self.lines += completed as u32;
     }
 
     fn check_for_lost(&mut self) {
-        for column in self.m_board[0].iter() {
+        for column in self.board[0].iter() {
             if !matches!(column, BoardPossibilities::Empty) {
-                self.m_lost = true;
+                self.lost = true;
             }
         }
     }
@@ -307,15 +298,15 @@ impl Board {
     fn fix_brick(&mut self) {
         for py in 0..4 {
             for px in 0..4 {
-                let x: i32 = self.m_brick_coord.x as i32 - 2 + px as i32;
-                let y: i32 = self.m_brick_coord.y as i32 - 1 + py as i32;
-                if self.m_brick.consult(py, px)
+                let x: i32 = self.brick_coord.x as i32 - 2 + px as i32;
+                let y: i32 = self.brick_coord.y as i32 - 1 + py as i32;
+                if self.brick.consult(py, px)
                     && x >= 0
                     && y >= 0
                     && x < NUMBER_OF_COLUMNS as i32
                     && y < NUMBER_OF_LINES as i32
                 {
-                    self.m_board[y as usize][x as usize] = *self.m_brick.consult_color();
+                    self.board[y as usize][x as usize] = *self.brick.consult_color();
                 }
             }
         }

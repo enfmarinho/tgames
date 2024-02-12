@@ -45,18 +45,18 @@ enum GameState {
 }
 
 pub struct TetrisGameManager<'a> {
-    m_terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    m_game_state: GameState,
-    m_menu_opt: MenuOpt,
-    m_play_opt: PlayOpt,
-    m_board: Board,
-    m_counter: usize,
-    m_score_record: u32,
-    m_line_record: u32,
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    game_state: GameState,
+    menu_opt: MenuOpt,
+    play_opt: PlayOpt,
+    board: Board,
+    counter: usize,
+    score_record: u32,
+    line_record: u32,
 }
 impl<'a> GameManager for TetrisGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Helping => game_manager::read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
@@ -68,107 +68,107 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
-        match self.m_game_state {
-            GameState::Starting => self.m_game_state = GameState::Playing,
-            GameState::Helping => self.m_game_state = GameState::Menu,
-            GameState::Menu | GameState::Lost => match self.m_menu_opt {
+        match self.game_state {
+            GameState::Starting => self.game_state = GameState::Playing,
+            GameState::Helping => self.game_state = GameState::Menu,
+            GameState::Menu | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    self.m_board.reset_board();
-                    self.m_game_state = GameState::Playing;
+                    self.board.reset_board();
+                    self.game_state = GameState::Playing;
                 }
                 MenuOpt::Help => {
-                    self.m_game_state = GameState::Helping;
+                    self.game_state = GameState::Helping;
                 }
                 MenuOpt::Quit => {
-                    self.m_game_state = GameState::Quitting;
+                    self.game_state = GameState::Quitting;
                 }
                 MenuOpt::None => (),
             },
             GameState::Playing => {
-                self.m_counter += 1;
-                if self.m_counter > 3 {
-                    self.m_board.drop();
-                    self.m_counter = 0;
+                self.counter += 1;
+                if self.counter > 3 {
+                    self.board.drop();
+                    self.counter = 0;
                 }
-                match self.m_play_opt {
+                match self.play_opt {
                     PlayOpt::Left => {
-                        self.m_board.move_left();
+                        self.board.move_left();
                     }
                     PlayOpt::Right => {
-                        self.m_board.move_right();
+                        self.board.move_right();
                     }
                     PlayOpt::Pause => {
-                        self.m_game_state = GameState::Pause;
+                        self.game_state = GameState::Pause;
                     }
                     PlayOpt::Rotate => {
-                        self.m_board.rotate();
+                        self.board.rotate();
                     }
                     PlayOpt::SoftDrop => {
-                        self.m_board.soft_drop();
-                        self.m_counter = 0;
+                        self.board.soft_drop();
+                        self.counter = 0;
                     }
                     PlayOpt::HardDrop => {
-                        self.m_board.hard_drop();
-                        self.m_counter = 0;
+                        self.board.hard_drop();
+                        self.counter = 0;
                     }
                     PlayOpt::Quit => {
-                        self.m_game_state = GameState::Menu;
-                        if self.m_board.consult_score() > self.m_score_record {
-                            self.m_score_record = self.m_board.consult_score();
+                        self.game_state = GameState::Menu;
+                        if self.board.consult_score() > self.score_record {
+                            self.score_record = self.board.consult_score();
                         }
-                        if self.m_board.consult_lines_completed() > self.m_line_record {
-                            self.m_line_record = self.m_board.consult_lines_completed();
+                        if self.board.consult_lines_completed() > self.line_record {
+                            self.line_record = self.board.consult_lines_completed();
                         }
                     }
                     PlayOpt::None => (),
                 }
-                if self.m_board.defeated() {
-                    self.m_game_state = GameState::Lost;
-                    if self.m_board.consult_score() > self.m_score_record {
-                        self.m_score_record = self.m_board.consult_score();
+                if self.board.defeated() {
+                    self.game_state = GameState::Lost;
+                    if self.board.consult_score() > self.score_record {
+                        self.score_record = self.board.consult_score();
                     }
-                    if self.m_board.consult_lines_completed() > self.m_line_record {
-                        self.m_line_record = self.m_board.consult_lines_completed();
+                    if self.board.consult_lines_completed() > self.line_record {
+                        self.line_record = self.board.consult_lines_completed();
                     }
                 }
             }
-            GameState::Pause => self.m_game_state = GameState::Playing,
+            GameState::Pause => self.game_state = GameState::Playing,
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn render(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Helping => self.display_game_rules()?,
             GameState::Menu => self.display_screen(
-                self.m_score_record,
-                self.m_line_record,
+                self.score_record,
+                self.line_record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
                 "",
             )?,
             GameState::Playing => self.display_screen(
-                self.m_board.consult_score(),
-                self.m_board.consult_lines_completed(),
+                self.board.consult_score(),
+                self.board.consult_lines_completed(),
                 Self::play_guide(),
                 "Game board",
                 "Score",
                 "",
             )?,
             GameState::Pause => self.display_screen(
-                self.m_score_record,
-                self.m_line_record,
+                self.score_record,
+                self.line_record,
                 Self::menu_guide(),
                 "Menu",
                 "Score",
                 "Game is paused.\nPress enter to continue.",
             )?,
             GameState::Lost => self.display_screen(
-                self.m_score_record,
-                self.m_line_record,
+                self.score_record,
+                self.line_record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
@@ -180,21 +180,21 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     }
 
     fn ended(&self) -> bool {
-        matches!(self.m_game_state, GameState::Quitting)
+        matches!(self.game_state, GameState::Quitting)
     }
 }
 
 impl<'a> TetrisGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         Self {
-            m_terminal: terminal,
-            m_game_state: GameState::Starting,
-            m_menu_opt: MenuOpt::None,
-            m_play_opt: PlayOpt::None,
-            m_board: Board::new(),
-            m_counter: 0,
-            m_score_record: 0,
-            m_line_record: 0,
+            terminal,
+            game_state: GameState::Starting,
+            menu_opt: MenuOpt::None,
+            play_opt: PlayOpt::None,
+            board: Board::new(),
+            counter: 0,
+            score_record: 0,
+            line_record: 0,
         }
     }
 
@@ -219,7 +219,7 @@ impl<'a> TetrisGameManager<'a> {
         score_title: &str,
         message: &str,
     ) -> Result<()> {
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -235,7 +235,7 @@ impl<'a> TetrisGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message.to_string())).block(
+                Paragraph::new(self.board.display_board(message.to_string())).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -245,7 +245,7 @@ impl<'a> TetrisGameManager<'a> {
             );
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_next_brick()).block(
+                Paragraph::new(self.board.display_next_brick()).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title("Next brick")
@@ -289,7 +289,7 @@ impl<'a> TetrisGameManager<'a> {
 
     fn display_game_rules(&mut self) -> Result<()> {
         let message = String::from("TODO write game rules.");
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
@@ -312,7 +312,7 @@ impl<'a> TetrisGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
+                    self.menu_opt = MenuOpt::Quit;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -321,7 +321,7 @@ impl<'a> TetrisGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Help;
+                    self.menu_opt = MenuOpt::Help;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -336,7 +336,7 @@ impl<'a> TetrisGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Play;
+                    self.menu_opt = MenuOpt::Play;
                     break;
                 }
                 _ => (),
@@ -365,7 +365,7 @@ impl<'a> TetrisGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Left,
+                }) => self.play_opt = PlayOpt::Left,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('l'),
                     modifiers: KeyModifiers::NONE,
@@ -383,7 +383,7 @@ impl<'a> TetrisGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Right,
+                }) => self.play_opt = PlayOpt::Right,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('j'),
                     modifiers: KeyModifiers::NONE,
@@ -401,7 +401,7 @@ impl<'a> TetrisGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::SoftDrop,
+                }) => self.play_opt = PlayOpt::SoftDrop,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('k'),
                     modifiers: KeyModifiers::NONE,
@@ -419,19 +419,19 @@ impl<'a> TetrisGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Rotate,
+                }) => self.play_opt = PlayOpt::Rotate,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char(' '),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::HardDrop,
+                }) => self.play_opt = PlayOpt::HardDrop,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('p'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Pause,
+                }) => self.play_opt = PlayOpt::Pause,
                 Event::Key(KeyEvent {
                     code: KeyCode::Esc,
                     modifiers: KeyModifiers::NONE,
@@ -444,12 +444,12 @@ impl<'a> TetrisGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opt = PlayOpt::Quit;
+                    self.play_opt = PlayOpt::Quit;
                 }
                 _ => (),
             }
         } else {
-            self.m_play_opt = PlayOpt::None;
+            self.play_opt = PlayOpt::None;
         }
         Ok(())
     }

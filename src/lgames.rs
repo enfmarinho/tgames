@@ -65,24 +65,24 @@ enum LGamesState {
 }
 
 struct LGamesManager {
-    m_terminal: Terminal<CrosstermBackend<Stdout>>,
-    m_execution_state: LGamesState,
-    m_main_menu_opts: MainMenuOpts,
-    m_game_index: usize,
+    terminal: Terminal<CrosstermBackend<Stdout>>,
+    execution_state: LGamesState,
+    main_menu_opts: MainMenuOpts,
+    game_index: usize,
 }
 
 impl LGamesManager {
     fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> LGamesManager {
         LGamesManager {
-            m_terminal: terminal,
-            m_execution_state: LGamesState::Starting,
-            m_main_menu_opts: MainMenuOpts::None,
-            m_game_index: 0,
+            terminal,
+            execution_state: LGamesState::Starting,
+            main_menu_opts: MainMenuOpts::None,
+            game_index: 0,
         }
     }
 
     fn process_events(&mut self) -> Result<()> {
-        match self.m_execution_state {
+        match self.execution_state {
             LGamesState::MainMenu => self.read_main_menu_input()?,
             LGamesState::Starting | LGamesState::Quitting => (),
         }
@@ -90,19 +90,19 @@ impl LGamesManager {
     }
 
     fn update(&mut self) -> Result<()> {
-        match self.m_execution_state {
-            LGamesState::Starting => self.m_execution_state = LGamesState::MainMenu,
-            LGamesState::MainMenu => match self.m_main_menu_opts {
+        match self.execution_state {
+            LGamesState::Starting => self.execution_state = LGamesState::MainMenu,
+            LGamesState::MainMenu => match self.main_menu_opts {
                 MainMenuOpts::Play => self.play()?,
-                MainMenuOpts::Quit => self.m_execution_state = LGamesState::Quitting,
+                MainMenuOpts::Quit => self.execution_state = LGamesState::Quitting,
                 MainMenuOpts::Up => {
-                    if self.m_game_index > 0 {
-                        self.m_game_index -= 1;
+                    if self.game_index > 0 {
+                        self.game_index -= 1;
                     }
                 }
                 MainMenuOpts::Down => {
-                    if self.m_game_index < Games::COUNT - 2 {
-                        self.m_game_index += 1;
+                    if self.game_index < Games::COUNT - 2 {
+                        self.game_index += 1;
                     }
                 }
                 MainMenuOpts::None => (),
@@ -113,7 +113,7 @@ impl LGamesManager {
     }
 
     fn render(&mut self) -> Result<()> {
-        match self.m_execution_state {
+        match self.execution_state {
             LGamesState::MainMenu => self.display_main_menu()?,
             LGamesState::Starting | LGamesState::Quitting => (),
         }
@@ -121,13 +121,13 @@ impl LGamesManager {
     }
 
     fn ended(&self) -> bool {
-        matches!(self.m_execution_state, LGamesState::Quitting)
+        matches!(self.execution_state, LGamesState::Quitting)
     }
 
     fn display_main_menu(&mut self) -> Result<()> {
         let mut lines: Vec<Line> = Vec::new();
         for (index, opts) in Games::iter().enumerate() {
-            if index == self.m_game_index {
+            if index == self.game_index {
                 lines.push(Line::from(Span::styled(
                     "> ".to_owned() + &opts.to_string() + " <",
                     Style::default().green(),
@@ -139,7 +139,7 @@ impl LGamesManager {
             }
             lines.push(Line::from(Span::styled("\n\n", Style::default()).gray()));
         }
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -209,7 +209,7 @@ impl LGamesManager {
                     modifiers: KeyModifiers::NONE,
                     ..
                 }) => {
-                    self.m_main_menu_opts = MainMenuOpts::Quit;
+                    self.main_menu_opts = MainMenuOpts::Quit;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -218,7 +218,7 @@ impl LGamesManager {
                     modifiers: KeyModifiers::NONE,
                     ..
                 }) => {
-                    self.m_main_menu_opts = MainMenuOpts::Play;
+                    self.main_menu_opts = MainMenuOpts::Play;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -239,7 +239,7 @@ impl LGamesManager {
                     modifiers: KeyModifiers::NONE,
                     ..
                 }) => {
-                    self.m_main_menu_opts = MainMenuOpts::Up;
+                    self.main_menu_opts = MainMenuOpts::Up;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -260,7 +260,7 @@ impl LGamesManager {
                     modifiers: KeyModifiers::NONE,
                     ..
                 }) => {
-                    self.m_main_menu_opts = MainMenuOpts::Down;
+                    self.main_menu_opts = MainMenuOpts::Down;
                     break;
                 }
                 _ => (),
@@ -270,24 +270,24 @@ impl LGamesManager {
     }
 
     fn play(&mut self) -> Result<()> {
-        match Games::from_repr(self.m_game_index) {
+        match Games::from_repr(self.game_index) {
             Some(game) => self.run_game(game)?,
-            None => self.m_game_index = 0,
+            None => self.game_index = 0,
         }
         Ok(())
     }
 
     fn run_game(&mut self, game: Games) -> Result<()> {
         match game {
-            Games::Snake => SnakeGameManager::new(&mut self.m_terminal).run()?,
-            Games::Tetris => TetrisGameManager::new(&mut self.m_terminal).run()?,
-            Games::G2048 => G2048GameManager::new(&mut self.m_terminal).run()?,
-            Games::FlapBird => FlapBirdGameManager::new(&mut self.m_terminal).run()?,
+            Games::Snake => SnakeGameManager::new(&mut self.terminal).run()?,
+            Games::Tetris => TetrisGameManager::new(&mut self.terminal).run()?,
+            Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
+            Games::FlapBird => FlapBirdGameManager::new(&mut self.terminal).run()?,
             Games::Snaze => {
                 // TODO delete this.
                 let message =
                     String::from("Snaze game was selected.\nThis game is not yet available");
-                self.m_terminal.draw(|frame| {
+                self.terminal.draw(|frame| {
                     let area = frame.size();
                     frame.render_widget(Paragraph::new(message).white(), area);
                 })?;
@@ -297,7 +297,7 @@ impl LGamesManager {
                 // TODO delete this.
                 let message =
                     String::from("Sudoku game was selected.\nThis game is not yet available");
-                self.m_terminal.draw(|frame| {
+                self.terminal.draw(|frame| {
                     let area = frame.size();
                     frame.render_widget(Paragraph::new(message).white(), area);
                 })?;

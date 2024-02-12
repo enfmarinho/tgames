@@ -36,17 +36,17 @@ enum GameState {
 }
 
 pub struct G2048GameManager<'a> {
-    m_terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    m_game_state: GameState,
-    m_menu_opt: MenuOpt,
-    m_play_opts: PlayOpt,
-    m_record: u32,
-    m_board: Board,
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    game_state: GameState,
+    menu_opt: MenuOpt,
+    play_opts: PlayOpt,
+    record: u32,
+    board: Board,
 }
 
 impl<'a> GameManager for G2048GameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Helping => game_manager::read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
@@ -57,35 +57,35 @@ impl<'a> GameManager for G2048GameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
-        match self.m_game_state {
-            GameState::Starting => self.m_game_state = GameState::Playing,
-            GameState::Helping => self.m_game_state = GameState::Menu,
-            GameState::Menu | GameState::Lost => match self.m_menu_opt {
+        match self.game_state {
+            GameState::Starting => self.game_state = GameState::Playing,
+            GameState::Helping => self.game_state = GameState::Menu,
+            GameState::Menu | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    if matches!(self.m_game_state, GameState::Lost) {
-                        self.m_board.reset_board();
+                    if matches!(self.game_state, GameState::Lost) {
+                        self.board.reset_board();
                     }
-                    self.m_board.start_game();
-                    self.m_game_state = GameState::Playing;
+                    self.board.start_game();
+                    self.game_state = GameState::Playing;
                 }
-                MenuOpt::Help => self.m_game_state = GameState::Helping,
-                MenuOpt::Quit => self.m_game_state = GameState::Quitting,
+                MenuOpt::Help => self.game_state = GameState::Helping,
+                MenuOpt::Quit => self.game_state = GameState::Quitting,
                 MenuOpt::None => (),
             },
             GameState::Playing => {
-                match &self.m_play_opts {
-                    PlayOpt::Direction(direction) => self.m_board.move_pieces(direction),
+                match &self.play_opts {
+                    PlayOpt::Direction(direction) => self.board.move_pieces(direction),
                     PlayOpt::Quit => {
-                        self.m_game_state = GameState::Menu;
-                        self.m_board.reset_board();
+                        self.game_state = GameState::Menu;
+                        self.board.reset_board();
                     }
                     PlayOpt::None => {}
                 }
-                if self.m_board.defeated() {
-                    self.m_game_state = GameState::Lost;
+                if self.board.defeated() {
+                    self.game_state = GameState::Lost;
                 }
-                if self.m_board.consult_score() < self.m_record {
-                    self.m_record = self.m_board.consult_score();
+                if self.board.consult_score() < self.record {
+                    self.record = self.board.consult_score();
                 }
             }
             GameState::Quitting => (),
@@ -94,11 +94,11 @@ impl<'a> GameManager for G2048GameManager<'a> {
     }
 
     fn render(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Helping => self.display_game_rules()?,
             GameState::Menu => self.display_screen(
-                self.m_record,
+                self.record,
                 G2048GameManager::menu_guide(),
                 "Menu",
                 "Record",
@@ -106,7 +106,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
-                self.m_board.consult_score(),
+                self.board.consult_score(),
                 G2048GameManager::play_guide(),
                 "Game board",
                 "Score",
@@ -114,7 +114,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Lost => self.display_screen(
-                self.m_record,
+                self.record,
                 G2048GameManager::menu_guide(),
                 "Menu",
                 "Record",
@@ -126,19 +126,19 @@ impl<'a> GameManager for G2048GameManager<'a> {
         Ok(())
     }
     fn ended(&self) -> bool {
-        matches!(self.m_game_state, GameState::Quitting)
+        matches!(self.game_state, GameState::Quitting)
     }
 }
 
 impl<'a> G2048GameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         Self {
-            m_terminal: terminal,
-            m_game_state: GameState::Starting,
-            m_menu_opt: MenuOpt::None,
-            m_play_opts: PlayOpt::None,
-            m_record: 0,
-            m_board: Board::new(),
+            terminal,
+            game_state: GameState::Starting,
+            menu_opt: MenuOpt::None,
+            play_opts: PlayOpt::None,
+            record: 0,
+            board: Board::new(),
         }
     }
 
@@ -163,7 +163,7 @@ impl<'a> G2048GameManager<'a> {
         message: &str,
         color: Color,
     ) -> Result<()> {
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -178,7 +178,7 @@ impl<'a> G2048GameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message.to_string(), color)).block(
+                Paragraph::new(self.board.display_board(message.to_string(), color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -198,7 +198,7 @@ impl<'a> G2048GameManager<'a> {
             );
 
             frame.render_widget(
-                Paragraph::new(self.m_board.consult_number_of_moves().to_string()).block(
+                Paragraph::new(self.board.consult_number_of_moves().to_string()).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title("Number of moves")
@@ -222,7 +222,7 @@ impl<'a> G2048GameManager<'a> {
 
     fn display_game_rules(&mut self) -> Result<()> {
         let message = String::from("TODO That is not done yet.\nPress any key to continue.");
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area);
         })?;
@@ -244,7 +244,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
+                    self.menu_opt = MenuOpt::Quit;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -253,7 +253,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Help;
+                    self.menu_opt = MenuOpt::Help;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -268,7 +268,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Play;
+                    self.menu_opt = MenuOpt::Play;
                     break;
                 }
                 _ => (),
@@ -298,7 +298,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opts = PlayOpt::Direction(Directions::Left);
+                    self.play_opts = PlayOpt::Direction(Directions::Left);
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -319,7 +319,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opts = PlayOpt::Direction(Directions::Right);
+                    self.play_opts = PlayOpt::Direction(Directions::Right);
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -340,7 +340,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opts = PlayOpt::Direction(Directions::Down);
+                    self.play_opts = PlayOpt::Direction(Directions::Down);
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -361,7 +361,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opts = PlayOpt::Direction(Directions::Up);
+                    self.play_opts = PlayOpt::Direction(Directions::Up);
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -376,7 +376,7 @@ impl<'a> G2048GameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opts = PlayOpt::Quit;
+                    self.play_opts = PlayOpt::Quit;
                     break;
                 }
                 _ => (),

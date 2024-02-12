@@ -5,84 +5,84 @@ const NUMBER_OF_BRICKS: i32 = 7;
 
 #[derive(Clone)]
 pub struct Brick {
-    m_coord: Vec<bool>,
-    m_color: BoardPossibilities,
-    m_rotation: i8,
-    m_number_of_rotations: i8,
+    coord: Vec<bool>,
+    color: BoardPossibilities,
+    rotation: i8,
+    number_of_rotations: i8,
 }
 impl Brick {
     pub fn new() -> Self {
         let random = rand::thread_rng().gen_range(0..NUMBER_OF_BRICKS);
         match random {
             0 => Self {
-                m_coord: Self::i_shape(),
-                m_color: BoardPossibilities::Cyan,
-                m_rotation: 0,
-                m_number_of_rotations: 2,
+                coord: Self::i_shape(),
+                color: BoardPossibilities::Cyan,
+                rotation: 0,
+                number_of_rotations: 2,
             },
             1 => Self {
-                m_coord: Self::j_shape(),
-                m_color: BoardPossibilities::Blue,
-                m_number_of_rotations: 4,
-                m_rotation: 0,
+                coord: Self::j_shape(),
+                color: BoardPossibilities::Blue,
+                number_of_rotations: 4,
+                rotation: 0,
             },
             2 => Self {
-                m_coord: Self::l_shape(),
-                m_color: BoardPossibilities::Orange,
-                m_rotation: 0,
-                m_number_of_rotations: 4,
+                coord: Self::l_shape(),
+                color: BoardPossibilities::Orange,
+                rotation: 0,
+                number_of_rotations: 4,
             },
             3 => Self {
-                m_coord: Self::o_shape(),
-                m_color: BoardPossibilities::Yellow,
-                m_rotation: 0,
-                m_number_of_rotations: 1,
+                coord: Self::o_shape(),
+                color: BoardPossibilities::Yellow,
+                rotation: 0,
+                number_of_rotations: 1,
             },
             4 => Self {
-                m_coord: Self::s_shape(),
-                m_color: BoardPossibilities::Green,
-                m_rotation: 0,
-                m_number_of_rotations: 4,
+                coord: Self::s_shape(),
+                color: BoardPossibilities::Green,
+                rotation: 0,
+                number_of_rotations: 4,
             },
             5 => Self {
-                m_coord: Self::t_shape(),
-                m_color: BoardPossibilities::Pink,
-                m_rotation: 0,
-                m_number_of_rotations: 4,
+                coord: Self::t_shape(),
+                color: BoardPossibilities::Pink,
+                rotation: 0,
+                number_of_rotations: 4,
             },
             _ => Self {
-                m_coord: Self::z_shape(),
-                m_color: BoardPossibilities::Red,
-                m_rotation: 0,
-                m_number_of_rotations: 4,
+                coord: Self::z_shape(),
+                color: BoardPossibilities::Red,
+                rotation: 0,
+                number_of_rotations: 4,
             },
         }
     }
 
     pub fn rotate(&mut self) {
-        self.m_rotation += 1;
-        self.m_rotation %= self.m_number_of_rotations;
+        self.rotation += 1;
+        self.rotation %= self.number_of_rotations;
     }
     pub fn unrotate(&mut self) {
-        if self.m_rotation == 0 {
-            self.m_rotation = 3;
+        if self.rotation == 0 {
+            self.rotation = 3;
         } else {
-            self.m_rotation -= 1;
+            self.rotation -= 1;
         }
     }
 
     pub fn consult(&self, line: usize, column: usize) -> bool {
-        match self.m_rotation {
-            0 => self.m_coord[line * 4 + column],
-            1 => self.m_coord[12 + line - column * 4],
-            2 => self.m_coord[15 - line * 4 - column],
-            3 => self.m_coord[3 - line + column * 4],
+        match self.rotation {
+            0 => self.coord[line * 4 + column],
+            1 => self.coord[12 + line - column * 4],
+            2 => self.coord[15 - line * 4 - column],
+            3 => self.coord[3 - line + column * 4],
             _ => false, // Should not reach this.
         }
     }
 
     pub fn consult_color(&self) -> &BoardPossibilities {
-        &self.m_color
+        &self.color
     }
 
     fn i_shape() -> Vec<bool> {

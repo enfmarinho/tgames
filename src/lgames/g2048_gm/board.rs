@@ -7,21 +7,21 @@ const NUMBER_OF_COLUMNS: usize = 4;
 const NUMBER_OF_LINES: usize = 4;
 
 pub struct Board {
-    m_board: Vec<u32>,
-    m_number_of_moves: u32,
-    m_score: u32,
-    m_lost: bool,
+    board: Vec<u32>,
+    number_of_moves: u32,
+    score: u32,
+    lost: bool,
 }
 
 impl Board {
     pub fn new() -> Self {
         let mut board = Self {
-            m_board: Vec::with_capacity(NUMBER_OF_LINES * NUMBER_OF_COLUMNS),
-            m_number_of_moves: 0,
-            m_score: 0,
-            m_lost: false,
+            board: Vec::with_capacity(NUMBER_OF_LINES * NUMBER_OF_COLUMNS),
+            number_of_moves: 0,
+            score: 0,
+            lost: false,
         };
-        board.m_board.resize(NUMBER_OF_LINES * NUMBER_OF_COLUMNS, 0);
+        board.board.resize(NUMBER_OF_LINES * NUMBER_OF_COLUMNS, 0);
         board.generate_block();
         board.generate_block();
         board
@@ -29,11 +29,11 @@ impl Board {
 
     pub fn reset_board(&mut self) {
         for index in 0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS) {
-            self.m_board[index] = 0;
+            self.board[index] = 0;
         }
-        self.m_number_of_moves = 0;
-        self.m_score = 0;
-        self.m_lost = false;
+        self.number_of_moves = 0;
+        self.score = 0;
+        self.lost = false;
     }
 
     pub fn start_game(&mut self) {
@@ -42,7 +42,7 @@ impl Board {
     }
 
     pub fn defeated(&self) -> bool {
-        self.m_lost
+        self.lost
     }
 
     pub fn move_pieces(&mut self, direction: &Directions) {
@@ -54,7 +54,7 @@ impl Board {
             Directions::Left => moved = self.move_left(),
         };
         if moved {
-            self.m_number_of_moves += 1;
+            self.number_of_moves += 1;
             self.generate_block();
         }
     }
@@ -156,11 +156,11 @@ impl Board {
     }
 
     pub fn consult_score(&self) -> u32 {
-        self.m_score
+        self.score
     }
 
     pub fn consult_number_of_moves(&self) -> u32 {
-        self.m_number_of_moves
+        self.number_of_moves
     }
 
     fn move_up(&mut self) -> bool {
@@ -178,7 +178,7 @@ impl Board {
                 if value == self.consult_board(index, column) {
                     *self.get_board_pos(index, column) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
-                    self.m_score += 2 * value;
+                    self.score += 2 * value;
                     moved = true;
                 } else if self.consult_board(index, column) == 0 {
                     *self.get_board_pos(index, column) = value;
@@ -210,7 +210,7 @@ impl Board {
                 if value == self.consult_board(index, column) {
                     *self.get_board_pos(index, column) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
-                    self.m_score += 2 * value;
+                    self.score += 2 * value;
                     moved = true;
                 } else if self.consult_board(index, column) == 0 {
                     *self.get_board_pos(index, column) = value;
@@ -242,7 +242,7 @@ impl Board {
                 if value == self.consult_board(line, index) {
                     *self.get_board_pos(line, index) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
-                    self.m_score += 2 * value;
+                    self.score += 2 * value;
                     moved = true;
                 } else if self.consult_board(line, index) == 0 {
                     *self.get_board_pos(line, index) = value;
@@ -273,7 +273,7 @@ impl Board {
                 if value == self.consult_board(line, index) {
                     *self.get_board_pos(line, index) = 2 * value;
                     *self.get_board_pos(line, column) = 0;
-                    self.m_score += 2 * value;
+                    self.score += 2 * value;
                     moved = true;
                 } else if self.consult_board(line, index) == 0 {
                     *self.get_board_pos(line, index) = value;
@@ -291,23 +291,23 @@ impl Board {
 
     fn generate_block(&mut self) {
         let mut index = rand::thread_rng().gen_range(0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS));
-        while self.m_board[index] != 0 {
+        while self.board[index] != 0 {
             index += 1;
             index %= NUMBER_OF_LINES * NUMBER_OF_COLUMNS;
         }
         let random = rand::thread_rng().gen_range(0..10);
         if random == 4 {
-            self.m_board[index] = 4;
+            self.board[index] = 4;
         } else {
-            self.m_board[index] = 2;
+            self.board[index] = 2;
         }
     }
 
     fn consult_board(&self, line: usize, column: usize) -> u32 {
-        self.m_board[line * NUMBER_OF_COLUMNS + column]
+        self.board[line * NUMBER_OF_COLUMNS + column]
     }
 
     fn get_board_pos(&mut self, line: usize, column: usize) -> &mut u32 {
-        &mut self.m_board[line * NUMBER_OF_COLUMNS + column]
+        &mut self.board[line * NUMBER_OF_COLUMNS + column]
     }
 }

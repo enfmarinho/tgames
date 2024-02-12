@@ -15,30 +15,30 @@ enum BoardPossibilities {
 }
 
 pub struct Board {
-    m_board: Vec<BoardPossibilities>,
-    m_height: usize,
-    m_width: usize,
-    m_score: u32,
-    m_snake: VecDeque<Coord>,
+    board: Vec<BoardPossibilities>,
+    height: usize,
+    width: usize,
+    score: u32,
+    snake: VecDeque<Coord>,
 }
 impl Board {
     pub fn new(board_height: usize, board_width: usize) -> Self {
         let mut board = Self {
-            m_board: Vec::with_capacity(board_height * board_width),
-            m_height: board_height,
-            m_width: board_width,
-            m_score: 1,
-            m_snake: VecDeque::new(),
+            board: Vec::with_capacity(board_height * board_width),
+            height: board_height,
+            width: board_width,
+            score: 1,
+            snake: VecDeque::new(),
         };
         board
-            .m_board
-            .resize(board.m_height * board.m_width, BoardPossibilities::Empty);
+            .board
+            .resize(board.height * board.width, BoardPossibilities::Empty);
         board.reset_board();
         board
     }
 
     pub fn snake_died(&self) -> bool {
-        match self.m_snake.front() {
+        match self.snake.front() {
             Some(coord) => matches!(
                 self.consult_board(coord.y, coord.x),
                 BoardPossibilities::SnakeDead
@@ -47,12 +47,12 @@ impl Board {
         }
     }
     pub fn won(&self) -> bool {
-        self.m_score == (self.m_height * self.m_width) as u32
+        self.score == (self.height * self.width) as u32
     }
 
     pub fn move_snake(&mut self, direction: &Directions) {
         let head: Coord;
-        if let Some(value) = self.m_snake.front() {
+        if let Some(value) = self.snake.front() {
             head = value.clone();
         } else {
             panic!();
@@ -84,17 +84,17 @@ impl Board {
             self.consult_board(new_head_pos.y, new_head_pos.x),
             BoardPossibilities::Food
         ) {
-            self.m_score += 1;
+            self.score += 1;
             self.generate_food();
-        } else if let Some(value) = self.m_snake.pop_back() {
+        } else if let Some(value) = self.snake.pop_back() {
             *self.get_board_position(&value.y, &value.x) = BoardPossibilities::Empty;
         }
         *self.get_board_position(&new_head_pos.y, &new_head_pos.x) = BoardPossibilities::SnakeHead;
-        self.m_snake.push_front(new_head_pos);
+        self.snake.push_front(new_head_pos);
     }
 
     pub fn consult_score(&self) -> u32 {
-        self.m_score
+        self.score
     }
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
@@ -108,7 +108,7 @@ impl Board {
         }
         let mut spans: String = String::new();
         spans += "╭";
-        for _counter in 1..self.m_width + 1 {
+        for _counter in 1..self.width + 1 {
             spans += "──";
         }
         spans += "╮";
@@ -116,10 +116,10 @@ impl Board {
             spans,
             Style::default().fg(Color::DarkGray),
         )));
-        for i in 0..self.m_height {
+        for i in 0..self.height {
             let mut spans: Vec<Span> = Vec::new();
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
-            for j in 0..self.m_width {
+            for j in 0..self.width {
                 match self.consult_board(i, j) {
                     BoardPossibilities::Empty => spans.push(Span::styled("  ", Style::default())),
                     BoardPossibilities::SnakeBody => {
@@ -141,7 +141,7 @@ impl Board {
         }
         let mut spans: String = String::new();
         spans += "╰";
-        for _counter in 1..self.m_width + 1 {
+        for _counter in 1..self.width + 1 {
             spans += "──";
         }
         spans += "╯";
@@ -152,29 +152,28 @@ impl Board {
     }
 
     pub fn reset_board(&mut self) {
-        self.m_score = 1;
-        self.m_board.fill(BoardPossibilities::Empty);
-        self.m_snake.clear();
-        self.m_snake.push_front(Coord {
-            x: self.m_width / 3,
-            y: self.m_height / 2,
+        self.score = 1;
+        self.board.fill(BoardPossibilities::Empty);
+        self.snake.clear();
+        self.snake.push_front(Coord {
+            x: self.width / 3,
+            y: self.height / 2,
         });
-        self.m_board[self.m_height / 2 * self.m_width + self.m_width - (self.m_width / 3)] =
+        self.board[self.height / 2 * self.width + self.width - (self.width / 3)] =
             BoardPossibilities::Food;
-        self.m_board[self.m_height / 2 * self.m_width + self.m_width / 3] =
-            BoardPossibilities::SnakeHead;
+        self.board[self.height / 2 * self.width + self.width / 3] = BoardPossibilities::SnakeHead;
     }
 
     fn generate_food(&mut self) {
-        let mut line = rand::thread_rng().gen_range(0..self.m_height);
-        let mut column = rand::thread_rng().gen_range(0..self.m_width);
+        let mut line = rand::thread_rng().gen_range(0..self.height);
+        let mut column = rand::thread_rng().gen_range(0..self.width);
         while !matches!(self.consult_board(line, column), BoardPossibilities::Empty) {
             column += 1;
-            if column == self.m_width {
+            if column == self.width {
                 column = 0;
                 line += 1;
             }
-            if line == self.m_height {
+            if line == self.height {
                 line = 0;
             }
         }
@@ -182,14 +181,14 @@ impl Board {
     }
 
     fn consult_board(&self, line: usize, column: usize) -> &BoardPossibilities {
-        &self.m_board[line * self.m_width + column]
+        &self.board[line * self.width + column]
     }
 
     fn get_board_position(&mut self, line: &usize, column: &usize) -> &mut BoardPossibilities {
-        &mut self.m_board[line * self.m_width + column]
+        &mut self.board[line * self.width + column]
     }
 
     fn position_valid(&self, coord: &Coord) -> bool {
-        coord.x > 0 && coord.x <= self.m_width && coord.y > 0 && coord.y <= self.m_height
+        coord.x > 0 && coord.x <= self.width && coord.y > 0 && coord.y <= self.height
     }
 }

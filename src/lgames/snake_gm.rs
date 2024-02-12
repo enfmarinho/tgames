@@ -37,17 +37,17 @@ enum GameState {
 }
 
 pub struct SnakeGameManager<'a> {
-    m_terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    m_game_state: GameState,
-    m_menu_opt: MenuOpt,
-    m_direction: Directions,
-    m_board: Board,
-    m_record: u32,
-    m_fps: u64,
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    game_state: GameState,
+    menu_opt: MenuOpt,
+    direction: Directions,
+    board: Board,
+    record: u32,
+    fps: u64,
 }
 impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Helping => game_manager::read_key()?,
@@ -58,34 +58,34 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
-        match self.m_game_state {
-            GameState::Starting => self.m_game_state = GameState::Playing,
-            GameState::Helping => self.m_game_state = GameState::Menu,
-            GameState::Menu | GameState::Won | GameState::Lost => match self.m_menu_opt {
+        match self.game_state {
+            GameState::Starting => self.game_state = GameState::Playing,
+            GameState::Helping => self.game_state = GameState::Menu,
+            GameState::Menu | GameState::Won | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    self.m_game_state = GameState::Playing;
-                    self.m_direction = Directions::Right;
-                    self.m_board.reset_board();
+                    self.game_state = GameState::Playing;
+                    self.direction = Directions::Right;
+                    self.board.reset_board();
                 }
-                MenuOpt::Quit => self.m_game_state = GameState::Quitting,
-                MenuOpt::Help => self.m_game_state = GameState::Helping,
-                MenuOpt::IncreaseFPS => self.change_fps(self.m_fps as i64 + FPS_CHANGE),
-                MenuOpt::DecreaseFPS => self.change_fps(self.m_fps as i64 - FPS_CHANGE),
+                MenuOpt::Quit => self.game_state = GameState::Quitting,
+                MenuOpt::Help => self.game_state = GameState::Helping,
+                MenuOpt::IncreaseFPS => self.change_fps(self.fps as i64 + FPS_CHANGE),
+                MenuOpt::DecreaseFPS => self.change_fps(self.fps as i64 - FPS_CHANGE),
                 MenuOpt::None => (),
             },
             GameState::Playing => {
-                self.m_board.move_snake(&self.m_direction);
-                if self.m_board.snake_died() {
-                    self.m_game_state = GameState::Lost;
-                } else if self.m_board.won() {
-                    self.m_game_state = GameState::Won;
+                self.board.move_snake(&self.direction);
+                if self.board.snake_died() {
+                    self.game_state = GameState::Lost;
+                } else if self.board.won() {
+                    self.game_state = GameState::Won;
                 }
-                if self.m_record < self.m_board.consult_score() {
-                    self.m_record = self.m_board.consult_score();
+                if self.record < self.board.consult_score() {
+                    self.record = self.board.consult_score();
                 }
-                if matches!(self.m_menu_opt, MenuOpt::Quit) {
-                    self.m_board.reset_board();
-                    self.m_game_state = GameState::Menu;
+                if matches!(self.menu_opt, MenuOpt::Quit) {
+                    self.board.reset_board();
+                    self.game_state = GameState::Menu;
                 }
             }
             GameState::Quitting => (),
@@ -94,11 +94,11 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     }
 
     fn render(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Helping => self.display_rules()?,
             GameState::Menu => self.display_screen(
-                self.m_record,
+                self.record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
@@ -106,7 +106,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
-                self.m_board.consult_score(),
+                self.board.consult_score(),
                 Self::play_guide(),
                 "Game board",
                 "Score",
@@ -114,7 +114,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Won => self.display_screen(
-                self.m_record,
+                self.record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
@@ -122,7 +122,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Green,
             )?,
             GameState::Lost => self.display_screen(
-                self.m_record,
+                self.record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
@@ -135,29 +135,29 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     }
 
     fn ended(&self) -> bool {
-        matches!(self.m_game_state, GameState::Quitting)
+        matches!(self.game_state, GameState::Quitting)
     }
 
     fn limit_fps(&self) {
-        std::thread::sleep(std::time::Duration::from_millis(1000 / self.m_fps));
+        std::thread::sleep(std::time::Duration::from_millis(1000 / self.fps));
     }
 }
 impl<'a> SnakeGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         SnakeGameManager {
-            m_terminal: terminal,
-            m_game_state: GameState::Starting,
-            m_menu_opt: MenuOpt::None,
-            m_direction: Directions::Right,
-            m_board: Board::new(12, 20),
-            m_record: 0,
-            m_fps: 15,
+            terminal,
+            game_state: GameState::Starting,
+            menu_opt: MenuOpt::None,
+            direction: Directions::Right,
+            board: Board::new(12, 20),
+            record: 0,
+            fps: 15,
         }
     }
 
     fn display_rules(&mut self) -> Result<()> {
         let message = String::from("There are only two rules you must follow when playing: don’t hit a wall and don’t bite your own tail.\nYou can move the snake using the arrows keys or the vim keys.\nYou win the game when there is no more room for your snake to grow.\nYour high score is calculated based on the number of squares you added to the snake.");
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
@@ -173,7 +173,7 @@ impl<'a> SnakeGameManager<'a> {
         message: String,
         color: Color,
     ) -> Result<()> {
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -184,7 +184,7 @@ impl<'a> SnakeGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message, color)).block(
+                Paragraph::new(self.board.display_board(message, color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -243,7 +243,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
+                    self.menu_opt = MenuOpt::Quit;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -252,7 +252,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Help;
+                    self.menu_opt = MenuOpt::Help;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -267,7 +267,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Play;
+                    self.menu_opt = MenuOpt::Play;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -276,7 +276,7 @@ impl<'a> SnakeGameManager<'a> {
                     modifiers: KeyModifiers::SHIFT,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::IncreaseFPS;
+                    self.menu_opt = MenuOpt::IncreaseFPS;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -285,7 +285,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::DecreaseFPS;
+                    self.menu_opt = MenuOpt::DecreaseFPS;
                     break;
                 }
                 _ => (),
@@ -314,7 +314,7 @@ impl<'a> SnakeGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_direction = Directions::Left,
+                }) => self.direction = Directions::Left,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('l'),
                     modifiers: KeyModifiers::NONE,
@@ -332,7 +332,7 @@ impl<'a> SnakeGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_direction = Directions::Right,
+                }) => self.direction = Directions::Right,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('j'),
                     modifiers: KeyModifiers::NONE,
@@ -350,7 +350,7 @@ impl<'a> SnakeGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_direction = Directions::Down,
+                }) => self.direction = Directions::Down,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('k'),
                     modifiers: KeyModifiers::NONE,
@@ -368,7 +368,7 @@ impl<'a> SnakeGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_direction = Directions::Up,
+                }) => self.direction = Directions::Up,
                 Event::Key(KeyEvent {
                     code: KeyCode::Esc,
                     modifiers: KeyModifiers::NONE,
@@ -381,7 +381,7 @@ impl<'a> SnakeGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
+                    self.menu_opt = MenuOpt::Quit;
                 }
                 _ => (),
             }
@@ -391,7 +391,7 @@ impl<'a> SnakeGameManager<'a> {
 
     fn change_fps(&mut self, fps: i64) {
         if fps > 0 {
-            self.m_fps = fps as u64;
+            self.fps = fps as u64;
         }
     }
 }
