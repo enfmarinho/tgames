@@ -31,6 +31,7 @@ pub struct Coord {
     pub y: usize,
 }
 
+#[derive(Clone)]
 pub enum Directions {
     Up,
     Down,

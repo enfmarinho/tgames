@@ -7,7 +7,7 @@ mod tetris_gm;
 
 use self::{
     flap_bird_gm::FlapBirdGameManager, g2048_gm::G2048GameManager, game_manager::GameManager,
-    snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager,
+    snake_gm::SnakeGameManager, sudoku_gm::SudokuGameManager, tetris_gm::TetrisGameManager,
 };
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -281,6 +281,7 @@ impl LGamesManager {
             Games::Tetris => TetrisGameManager::new(&mut self.terminal).run()?,
             Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
             Games::FlapBird => FlapBirdGameManager::new(&mut self.terminal).run()?,
+            // Games::Sudoku => SudokuGameManager::new(&mut self.terminal).run()?,
             Games::Sudoku => {
                 // TODO delete this.
                 let message =
