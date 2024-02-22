@@ -15,7 +15,7 @@ use std::{
     time::Duration,
 };
 
-const FPS_CHANGE: u64 = 2;
+// const FPS_CHANGE: u64 = 2;
 
 enum PlayOpt {
     Jump,
@@ -28,6 +28,8 @@ enum MenuOpt {
     Play,
     Quit,
     Help,
+    // IncreaseFPS,
+    // DecreaseFPS,
     None,
 }
 
@@ -42,18 +44,18 @@ enum GameState {
 }
 
 pub struct FlapBirdGameManager<'a> {
-    m_terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
-    m_game_state: GameState,
-    m_menu_opt: MenuOpt,
-    m_play_opt: PlayOpt,
-    m_board: Board,
-    m_record: u32,
-    m_fps: u64,
+    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+    game_state: GameState,
+    menu_opt: MenuOpt,
+    play_opt: PlayOpt,
+    board: Board,
+    record: u32,
+    fps: u64,
 }
 
 impl<'a> GameManager for FlapBirdGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
@@ -64,52 +66,55 @@ impl<'a> GameManager for FlapBirdGameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
-        match self.m_game_state {
-            GameState::Starting => self.m_game_state = GameState::Playing,
-            GameState::Menu | GameState::Lost => match self.m_menu_opt {
+        match self.game_state {
+            GameState::Starting => self.game_state = GameState::Playing,
+            GameState::Menu | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    if matches!(self.m_game_state, GameState::Lost) {
-                        self.m_board.reset_board();
+                    if matches!(self.game_state, GameState::Lost) {
+                        self.board.reset_board();
                     }
-                    self.m_game_state = GameState::Playing;
+                    self.game_state = GameState::Playing;
                 }
-                MenuOpt::Help => self.m_game_state = GameState::Helping,
-                MenuOpt::Quit => self.m_game_state = GameState::Quitting,
+                MenuOpt::Help => self.game_state = GameState::Helping,
+                MenuOpt::Quit => self.game_state = GameState::Quitting,
                 MenuOpt::None => (),
             },
             GameState::Playing => {
-                match self.m_play_opt {
-                    PlayOpt::None => self.m_board.advance(false),
-                    PlayOpt::Jump => self.m_board.advance(true),
-                    PlayOpt::Pause => self.m_game_state = GameState::Pause,
-                    PlayOpt::Quit => self.m_game_state = GameState::Menu,
+                match self.play_opt {
+                    PlayOpt::None => self.board.advance(false),
+                    PlayOpt::Jump => self.board.advance(true),
+                    PlayOpt::Pause => self.game_state = GameState::Pause,
+                    PlayOpt::Quit => self.game_state = GameState::Menu,
                 }
-                if self.m_board.lost() {
-                    self.m_game_state = GameState::Lost;
+                if self.board.lost() {
+                    self.game_state = GameState::Lost;
+                }
+                if self.record < self.board.consult_score() {
+                    self.record = self.board.consult_score();
                 }
             }
-            GameState::Helping => self.m_game_state = GameState::Menu,
-            GameState::Pause => self.m_game_state = GameState::Playing,
+            GameState::Helping => self.game_state = GameState::Menu,
+            GameState::Pause => self.game_state = GameState::Playing,
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn render(&mut self) -> Result<()> {
-        match self.m_game_state {
+        match self.game_state {
             GameState::Starting => (),
             GameState::Menu => {
-                self.display_screen(self.m_record, Self::menu_guide(), "Menu", "Record", "")?
+                self.display_screen(self.record, Self::menu_guide(), "Menu", "Record", "")?
             }
             GameState::Playing => self.display_screen(
-                self.m_board.consult_score(),
+                self.board.consult_score(),
                 Self::play_guide(),
                 "Game board",
                 "Score",
                 "",
             )?,
             GameState::Lost => self.display_screen(
-                self.m_record,
+                self.record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
@@ -117,7 +122,7 @@ impl<'a> GameManager for FlapBirdGameManager<'a> {
             )?,
             GameState::Helping => self.diplay_game_rules()?,
             GameState::Pause => self.display_screen(
-                self.m_board.consult_score(),
+                self.board.consult_score(),
                 Self::play_guide(),
                 "Game board",
                 "Score",
@@ -129,30 +134,30 @@ impl<'a> GameManager for FlapBirdGameManager<'a> {
     }
 
     fn ended(&self) -> bool {
-        matches!(self.m_game_state, GameState::Quitting)
+        matches!(self.game_state, GameState::Quitting)
     }
 
     fn limit_fps(&self) {
-        std::thread::sleep(std::time::Duration::from_millis(1000 / self.m_fps));
+        std::thread::sleep(std::time::Duration::from_millis(1000 / self.fps));
     }
 }
 
 impl<'a> FlapBirdGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         Self {
-            m_terminal: terminal,
-            m_game_state: GameState::Starting,
-            m_menu_opt: MenuOpt::None,
-            m_play_opt: PlayOpt::None,
-            m_board: Board::new(),
-            m_record: 0,
-            m_fps: 5,
+            terminal,
+            game_state: GameState::Starting,
+            menu_opt: MenuOpt::None,
+            play_opt: PlayOpt::None,
+            board: Board::new(),
+            record: 0,
+            fps: 5,
         }
     }
 
     fn diplay_game_rules(&mut self) -> Result<()> {
         let message = String::from("TODO write game rules.");
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
@@ -177,10 +182,10 @@ impl<'a> FlapBirdGameManager<'a> {
         score_title: &str,
         message: &str,
     ) -> Result<()> {
-        self.m_terminal.draw(|frame| {
+        self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(60), Constraint::Fill(1)])
+                .constraints([Constraint::Percentage(90), Constraint::Fill(1)])
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Horizontal)
@@ -188,7 +193,7 @@ impl<'a> FlapBirdGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.m_board.display_board(message.to_string())).block(
+                Paragraph::new(self.board.display_board(message.to_string())).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -236,7 +241,7 @@ impl<'a> FlapBirdGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Quit;
+                    self.menu_opt = MenuOpt::Quit;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -245,7 +250,7 @@ impl<'a> FlapBirdGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Help;
+                    self.menu_opt = MenuOpt::Help;
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -260,7 +265,7 @@ impl<'a> FlapBirdGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_menu_opt = MenuOpt::Play;
+                    self.menu_opt = MenuOpt::Play;
                     break;
                 }
                 _ => (),
@@ -295,13 +300,13 @@ impl<'a> FlapBirdGameManager<'a> {
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Jump,
+                }) => self.play_opt = PlayOpt::Jump,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('p'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.m_play_opt = PlayOpt::Pause,
+                }) => self.play_opt = PlayOpt::Pause,
                 Event::Key(KeyEvent {
                     code: KeyCode::Esc,
                     modifiers: KeyModifiers::NONE,
@@ -314,12 +319,12 @@ impl<'a> FlapBirdGameManager<'a> {
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.m_play_opt = PlayOpt::Quit;
+                    self.play_opt = PlayOpt::Quit;
                 }
                 _ => (),
             }
         } else {
-            self.m_play_opt = PlayOpt::None;
+            self.play_opt = PlayOpt::None;
         }
         Ok(())
     }

@@ -1,6 +1,6 @@
 use ratatui::text::Line;
 
-use crate::lgames::game_manager::Directions;
+use crate::tgames::game_manager::Directions;
 
 pub enum Status {
     Original,

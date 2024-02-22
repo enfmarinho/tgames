@@ -36,7 +36,7 @@ pub enum Games {
 }
 
 pub fn run(terminal: Terminal<CrosstermBackend<Stdout>>, game: Games) -> Result<()> {
-    let mut game_instance = LGamesManager::new(terminal);
+    let mut game_instance = TGamesManager::new(terminal);
     if Games::None != game {
         game_instance.run_game(game)?;
     }
@@ -56,24 +56,24 @@ enum MainMenuOpts {
     None,
 }
 
-enum LGamesState {
+enum TGamesState {
     Starting,
     MainMenu,
     Quitting,
 }
 
-struct LGamesManager {
+struct TGamesManager {
     terminal: Terminal<CrosstermBackend<Stdout>>,
-    execution_state: LGamesState,
+    execution_state: TGamesState,
     main_menu_opts: MainMenuOpts,
     game_index: usize,
 }
 
-impl LGamesManager {
-    fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> LGamesManager {
-        LGamesManager {
+impl TGamesManager {
+    fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> TGamesManager {
+        TGamesManager {
             terminal,
-            execution_state: LGamesState::Starting,
+            execution_state: TGamesState::Starting,
             main_menu_opts: MainMenuOpts::None,
             game_index: 0,
         }
@@ -81,18 +81,18 @@ impl LGamesManager {
 
     fn process_events(&mut self) -> Result<()> {
         match self.execution_state {
-            LGamesState::MainMenu => self.read_main_menu_input()?,
-            LGamesState::Starting | LGamesState::Quitting => (),
+            TGamesState::MainMenu => self.read_main_menu_input()?,
+            TGamesState::Starting | TGamesState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
         match self.execution_state {
-            LGamesState::Starting => self.execution_state = LGamesState::MainMenu,
-            LGamesState::MainMenu => match self.main_menu_opts {
+            TGamesState::Starting => self.execution_state = TGamesState::MainMenu,
+            TGamesState::MainMenu => match self.main_menu_opts {
                 MainMenuOpts::Play => self.play()?,
-                MainMenuOpts::Quit => self.execution_state = LGamesState::Quitting,
+                MainMenuOpts::Quit => self.execution_state = TGamesState::Quitting,
                 MainMenuOpts::Up => {
                     if self.game_index > 0 {
                         self.game_index -= 1;
@@ -105,21 +105,21 @@ impl LGamesManager {
                 }
                 MainMenuOpts::None => (),
             },
-            LGamesState::Quitting => (),
+            TGamesState::Quitting => (),
         }
         Ok(())
     }
 
     fn render(&mut self) -> Result<()> {
         match self.execution_state {
-            LGamesState::MainMenu => self.display_main_menu()?,
-            LGamesState::Starting | LGamesState::Quitting => (),
+            TGamesState::MainMenu => self.display_main_menu()?,
+            TGamesState::Starting | TGamesState::Quitting => (),
         }
         Ok(())
     }
 
     fn ended(&self) -> bool {
-        matches!(self.execution_state, LGamesState::Quitting)
+        matches!(self.execution_state, TGamesState::Quitting)
     }
 
     fn display_main_menu(&mut self) -> Result<()> {
@@ -152,7 +152,7 @@ impl LGamesManager {
                     Block::new()
                         .borders(Borders::ALL)
                         // .border_type(ratatui::widgets::BorderType::Rounded)
-                        .title("Lgames")
+                        .title("tgames")
                         .title_alignment(Alignment::Center),
                 ),
                 layout[0],
