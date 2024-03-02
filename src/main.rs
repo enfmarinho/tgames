@@ -1,5 +1,6 @@
 mod tgames;
 use crossterm::{
+    style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -38,10 +39,18 @@ fn main() -> Result<()> {
 
     stdout().execute(LeaveAlternateScreen)?;
     disable_raw_mode()?;
+    print_goodbye_message();
     Ok(())
 }
 
 fn print_help_message() {
     println!("Invalid command-line argument!");
     println!("Press enter to continue or CRTL-c to end execution.");
+}
+
+fn print_goodbye_message() {
+    println!(
+        "{}",
+        "Thanks for playing tgames󰊴 , hope you enjoyed it!!".green()
+    );
 }
