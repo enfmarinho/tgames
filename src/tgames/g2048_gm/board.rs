@@ -46,16 +46,15 @@ impl Board {
     }
 
     pub fn move_pieces(&mut self, direction: &Directions) {
-        let moved: bool;
-        match direction {
-            Directions::Up => moved = self.move_up(),
-            Directions::Down => moved = self.move_down(),
-            Directions::Right => moved = self.move_right(),
-            Directions::Left => moved = self.move_left(),
-        };
-        if moved {
+        if match direction {
+            Directions::Up => self.move_up(),
+            Directions::Down => self.move_down(),
+            Directions::Right => self.move_right(),
+            Directions::Left => self.move_left(),
+        } {
             self.number_of_moves += 1;
             self.generate_block();
+            self.lost = self.cannot_move();
         }
     }
 
@@ -98,12 +97,11 @@ impl Board {
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
             for column in 0..NUMBER_OF_COLUMNS {
                 let value = self.consult_board(line, column);
-                let number_of_spaces: i32;
-                if value == 0 {
-                    number_of_spaces = 6;
+                let number_of_spaces = if value == 0 {
+                    6
                 } else {
-                    number_of_spaces = 6 - f32::log10(value as f32).ceil() as i32;
-                }
+                    6 - f32::log10(value as f32).ceil() as i32
+                };
                 let mut word = String::new();
                 for _ in 0..number_of_spaces {
                     word.push(' ');
@@ -309,5 +307,35 @@ impl Board {
 
     fn get_board_pos(&mut self, line: usize, column: usize) -> &mut u32 {
         &mut self.board[line * NUMBER_OF_COLUMNS + column]
+    }
+
+    fn cannot_move(&self) -> bool {
+        for line in 0..NUMBER_OF_LINES - 1 {
+            for column in 0..NUMBER_OF_COLUMNS - 1 {
+                if self.consult_board(line, column) == 0
+                    || self.consult_board(line, column) == self.consult_board(line, column + 1)
+                    || self.consult_board(line, column) == self.consult_board(line + 1, column)
+                {
+                    return false;
+                }
+            }
+        }
+        for line in 0..NUMBER_OF_LINES - 1 {
+            if self.consult_board(line, NUMBER_OF_COLUMNS - 1) == 0
+                || self.consult_board(line, NUMBER_OF_COLUMNS - 1)
+                    == self.consult_board(line + 1, NUMBER_OF_COLUMNS - 1)
+            {
+                return false;
+            }
+        }
+        for column in 0..NUMBER_OF_COLUMNS - 1 {
+            if self.consult_board(NUMBER_OF_LINES - 1, column) == 0
+                || self.consult_board(NUMBER_OF_LINES - 1, column)
+                    == self.consult_board(NUMBER_OF_LINES - 1, column + 1)
+            {
+                return false;
+            }
+        }
+        self.consult_board(NUMBER_OF_LINES - 1, NUMBER_OF_COLUMNS - 1) != 0
     }
 }
