@@ -79,12 +79,12 @@ impl<'a> GameManager for G2048GameManager<'a> {
                         self.game_state = GameState::Menu;
                         self.board.reset_board();
                     }
-                    PlayOpt::None => {}
+                    PlayOpt::None => (),
                 }
                 if self.board.defeated() {
                     self.game_state = GameState::Lost;
                 }
-                if self.board.consult_score() < self.record {
+                if self.record < self.board.consult_score() {
                     self.record = self.board.consult_score();
                 }
             }
