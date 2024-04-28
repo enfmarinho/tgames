@@ -51,6 +51,6 @@ fn print_help_message() {
 fn print_goodbye_message() {
     println!(
         "{}",
-        "Thanks for playing tgames󰊴 , hope you enjoyed it!!".green()
+        "Thanks for playing tgames󰊴, hope you enjoyed it!".green()
     );
 }
