@@ -1,12 +1,11 @@
-mod flap_bird_gm;
 mod g2048_gm;
 mod game_manager;
 mod snake_gm;
 mod tetris_gm;
 
 use self::{
-    flap_bird_gm::FlapBirdGameManager, g2048_gm::G2048GameManager, game_manager::GameManager,
-    snake_gm::SnakeGameManager, tetris_gm::TetrisGameManager,
+    g2048_gm::G2048GameManager, game_manager::GameManager, snake_gm::SnakeGameManager,
+    tetris_gm::TetrisGameManager,
 };
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -27,8 +26,6 @@ pub enum Games {
     Tetris,
     #[strum(to_string = "2048")]
     G2048,
-    #[strum(to_string = "Flap bird")]
-    FlapBird,
     #[strum(to_string = "")]
     None,
 }
@@ -278,7 +275,6 @@ impl TGamesManager {
             Games::Snake => SnakeGameManager::new(&mut self.terminal).run()?,
             Games::Tetris => TetrisGameManager::new(&mut self.terminal).run()?,
             Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
-            Games::FlapBird => FlapBirdGameManager::new(&mut self.terminal).run()?,
             Games::None => (),
         }
         Ok(())
