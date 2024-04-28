@@ -5,6 +5,8 @@ version = "0.1.0"
 license = "MIT"
 authors = ["Eduardo Marinho <eduardonmarinho@proton.me>"]
 edition = "2021"
+readme = "README.md"
+repository = "https://github.com/enfmarinho/tgames.git"
 
 [dependencies]
 strum = "0.26.1"
