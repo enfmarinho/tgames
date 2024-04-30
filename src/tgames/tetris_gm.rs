@@ -288,7 +288,24 @@ impl<'a> TetrisGameManager<'a> {
     }
 
     fn display_game_rules(&mut self) -> Result<()> {
-        let message = String::from("TODO write game rules.");
+        let message = String::from(
+            "Tetris is like a puzzle game where you fit different shapes together
+to clear lines. Imagine you have a little playground, and colorful blocks
+start falling from the sky, one at a time. These blocks come in different
+shapes, like squares, long sticks, L's, and zigzags.
+
+Your job is to move and rotate these blocks as they fall, trying to fit them
+neatly at the bottom. You can slide them left or right and even spin them around
+until they lock into place. When you create a solid line across the playground 
+with no gaps, that line disappears, making room for more blocks.
+
+But here's the trick: the blocks keep falling as you play, so you need to think
+and act fast to keep up. If the blocks pile up and reach the top of the playground,
+it's game over!
+
+So, in short: move, spin, and stack the falling blocks to make solid lines and keep
+the playground clear. It's easy to learn, but oh-so-addictive once you get going!",
+        );
         self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)

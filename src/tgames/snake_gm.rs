@@ -96,7 +96,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn render(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => self.display_rules()?,
+            GameState::Helping => self.display_game_rules()?,
             GameState::Menu => self.display_screen(
                 self.record,
                 Self::menu_guide(),
@@ -155,8 +155,26 @@ impl<'a> SnakeGameManager<'a> {
         }
     }
 
-    fn display_rules(&mut self) -> Result<()> {
-        let message = String::from("There are only two rules you must follow when playing: don’t hit a wall and don’t bite your own tail.\nYou can move the snake using the arrows keys or the vim keys.\nYou win the game when there is no more room for your snake to grow.\nYour high score is calculated based on the number of squares you added to the snake.");
+    fn display_game_rules(&mut self) -> Result<()> {
+        let message = String::from(
+            "Imagine you're a little snake, slithering around a tiny world, looking
+for food. In this game, you control the snake's movements, guiding it across
+the screen.
+
+Your goal is simple: eat as much food as you can without crashing into anything. Food
+appears randomly on the screen. When your snake munches on the food, it grows longer.
+
+But here's the catch: your snake is always moving forward, and you can only control its
+direction, not its speed. As your snake gets longer, maneuvering becomes trickier because
+you need to avoid running into your own tail or hitting the walls.
+
+The longer your snake grows, the more points you earn. But be careful not to get too greedy
+and trap yourself!
+
+So, to sum it up: guide your snake around, gobble up the food to grow longer, and avoid
+crashing into anything. It's a simple concept, but you'll find yourself hooked in no time,
+trying to beat your high score with each game!",
+        );
         self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)

@@ -135,11 +135,11 @@ impl TGamesManager {
         self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])
+                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
                 .split(layout[1]);
 
             frame.render_widget(
@@ -183,7 +183,16 @@ impl TGamesManager {
     }
 
     fn tips_message() -> String {
-        String::from("TODO")
+        String::from(
+            "Some of the games use elements from nerd fonts,
+so try using one for the cool symbols. Also, 
+the size of everything is related to the size 
+of your font, so try adjusting it to make things
+fit. Note that the screen needs to be re-rendered 
+to fit with the different font size, so press any 
+valid key to do that, avoiding the ones that quit 
+the application (obviously).",
+        )
     }
 
     fn read_main_menu_input(&mut self) -> Result<()> {
