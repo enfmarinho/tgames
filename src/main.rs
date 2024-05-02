@@ -15,11 +15,11 @@ fn main() -> Result<()> {
     let mut game = Games::None;
     let argv: Vec<String> = env::args().collect();
     if argv.len() > 1 {
-        if argv[1] == "--snake" {
+        if argv[1] == "snake" {
             game = Games::Snake;
-        } else if argv[1] == "--tetris" {
+        } else if argv[1] == "tetris" {
             game = Games::Tetris;
-        } else if argv[1] == "--2048" {
+        } else if argv[1] == "2048" {
             game = Games::G2048;
         } else {
             print_help_message();
