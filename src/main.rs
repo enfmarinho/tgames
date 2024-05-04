@@ -21,6 +21,8 @@ fn main() -> Result<()> {
             game = Games::Tetris;
         } else if argv[1] == "2048" {
             game = Games::G2048;
+        } else if argv[1] == "flappybird" {
+            game = Games::FlappyBird;
         } else {
             print_help_message();
             let mut input: String = String::new();
