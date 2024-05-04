@@ -15,7 +15,7 @@ use std::{
     time::Duration,
 };
 
-// const FPS_CHANGE: u64 = 2;
+const FPS_CHANGE: u64 = 3;
 
 enum PlayOpt {
     Jump,
@@ -28,8 +28,8 @@ enum MenuOpt {
     Play,
     Quit,
     Help,
-    // IncreaseFPS,
-    // DecreaseFPS,
+    IncreaseFPS,
+    DecreaseFPS,
     None,
 }
 
@@ -43,7 +43,7 @@ enum GameState {
     Quitting,
 }
 
-pub struct FlapBirdGameManager<'a> {
+pub struct FlappyBirdGameManager<'a> {
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     game_state: GameState,
     menu_opt: MenuOpt,
@@ -53,7 +53,7 @@ pub struct FlapBirdGameManager<'a> {
     fps: u64,
 }
 
-impl<'a> GameManager for FlapBirdGameManager<'a> {
+impl<'a> GameManager for FlappyBirdGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
@@ -76,6 +76,8 @@ impl<'a> GameManager for FlapBirdGameManager<'a> {
                     self.game_state = GameState::Playing;
                 }
                 MenuOpt::Help => self.game_state = GameState::Helping,
+                MenuOpt::IncreaseFPS => self.increase_fps(),
+                MenuOpt::DecreaseFPS => self.decrease_fps(),
                 MenuOpt::Quit => self.game_state = GameState::Quitting,
                 MenuOpt::None => (),
             },
@@ -142,7 +144,7 @@ impl<'a> GameManager for FlapBirdGameManager<'a> {
     }
 }
 
-impl<'a> FlapBirdGameManager<'a> {
+impl<'a> FlappyBirdGameManager<'a> {
     pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
         Self {
             terminal,
@@ -151,7 +153,7 @@ impl<'a> FlapBirdGameManager<'a> {
             play_opt: PlayOpt::None,
             board: Board::new(),
             record: 0,
-            fps: 5,
+            fps: FPS_CHANGE * 2,
         }
     }
 
@@ -268,6 +270,24 @@ impl<'a> FlapBirdGameManager<'a> {
                     self.menu_opt = MenuOpt::Play;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('F'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.menu_opt = MenuOpt::IncreaseFPS;
+                    break;
+                }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('f'),
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.menu_opt = MenuOpt::DecreaseFPS;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -327,5 +347,14 @@ impl<'a> FlapBirdGameManager<'a> {
             self.play_opt = PlayOpt::None;
         }
         Ok(())
+    }
+    fn increase_fps(&mut self) {
+        self.fps += FPS_CHANGE;
+    }
+    fn decrease_fps(&mut self) {
+        self.fps -= FPS_CHANGE;
+        if self.fps < FPS_CHANGE {
+            self.fps = FPS_CHANGE;
+        }
     }
 }

@@ -5,13 +5,13 @@ use ratatui::{
 };
 use std::collections::LinkedList;
 
-const BOARD_HEIGHT: i32 = 10;
+const BOARD_HEIGHT: i32 = 20;
 const NUMBER_OF_PIPES: i32 = 5; // Should not be smaller than 2
-const PIPE_WIDTH: i32 = 1;
-const PIPES_DISTANCE: i32 = 4;
+const PIPE_WIDTH: i32 = 2;
+const PIPES_DISTANCE: i32 = 8;
 const PIPES_HOLE_SIZE: i32 = 4;
 const MAX_DISTANCE_BETWEEN_HOLES: i32 = 5;
-const JUMP: i32 = 1;
+const JUMP: i32 = 2;
 
 pub struct Board {
     score: u32,
