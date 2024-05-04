@@ -164,7 +164,8 @@ impl Board {
         if new_pos < 0 {
             self.pipe_holes.push_back(PIPES_HOLE_SIZE);
         } else if new_pos > BOARD_HEIGHT {
-            self.pipe_holes.push_back(BOARD_HEIGHT - 1);
+            self.pipe_holes
+                .push_back(BOARD_HEIGHT - PIPES_HOLE_SIZE / 2);
         } else {
             self.pipe_holes.push_back(new_pos);
         }
