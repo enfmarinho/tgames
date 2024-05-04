@@ -5,11 +5,11 @@ use ratatui::{
 };
 use std::collections::LinkedList;
 
-const NUMBER_OF_PIPES: i32 = 5; // Should not be smaller than 2
+const NUMBER_OF_PIPES: i32 = 10; // Should not be smaller than 2
 const PIPE_WIDTH: i32 = 2;
-const PIPES_DISTANCE: i32 = 10;
+const PIPES_DISTANCE: i32 = 7;
 const PIPES_HOLE_SIZE: i32 = 3;
-const MAX_DISTANCE_BETWEEN_HOLES: i32 = 5;
+const MAX_DISTANCE_BETWEEN_HOLES: i32 = 6;
 const JUMP: i32 = 2;
 const BOARD_HEIGHT: i32 = 20;
 const BOARD_WIDHT: i32 = (PIPE_WIDTH + PIPES_DISTANCE) * NUMBER_OF_PIPES;
@@ -50,6 +50,7 @@ impl Board {
         self.distance_to_next_pipe = PIPES_DISTANCE;
         self.died_horizontally = false;
         self.died_vertically = false;
+        self.in_pipe = 0;
     }
 
     fn in_hole(&self) -> bool {
@@ -117,10 +118,6 @@ impl Board {
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         Self::push_horizontal_board(&mut lines, true);
-        let mut pipe: String = String::new();
-        for _ in 0..PIPE_WIDTH {
-            pipe.push('█');
-        }
         for line in (0..BOARD_HEIGHT).rev() {
             let mut spans: Vec<Span> = Vec::new();
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
@@ -142,10 +139,10 @@ impl Board {
                     if line == self.bird_height && self.died_vertically && first_pipe {
                         spans.push(Span::styled("█", Style::default().fg(Color::Green)));
                     } else {
-                        spans.push(Span::styled(
-                            pipe.clone(),
-                            Style::default().fg(Color::Green),
-                        ));
+                        let start = if first_pipe { self.in_pipe } else { 0 };
+                        for _ in start..PIPE_WIDTH {
+                            spans.push(Span::styled("█", Style::default().fg(Color::Green)));
+                        }
                     }
                 } else {
                     for _ in 0..PIPE_WIDTH {
@@ -184,8 +181,7 @@ impl Board {
         if new_pos < 0 {
             self.pipe_holes.push_back(PIPES_HOLE_SIZE);
         } else if new_pos > BOARD_HEIGHT {
-            self.pipe_holes
-                .push_back(BOARD_HEIGHT - PIPES_HOLE_SIZE / 2);
+            self.pipe_holes.push_back(BOARD_HEIGHT - PIPES_HOLE_SIZE);
         } else {
             self.pipe_holes.push_back(new_pos);
         }

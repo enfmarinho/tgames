@@ -182,7 +182,7 @@ impl<'a> FlappyBirdGameManager<'a> {
     }
 
     fn play_guide() -> String {
-        String::from("w or k or  or SPACE - Jump\np                     - Pause game\nESC or q              - Go back to menu")
+        String::from("w or k or  or SPACE - Jump\np                    - Pause game\nESC or q             - Go back to menu")
     }
 
     fn display_screen(
