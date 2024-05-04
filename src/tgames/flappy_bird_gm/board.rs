@@ -19,7 +19,8 @@ pub struct Board {
     bird_height: i32,
     pipe_holes: LinkedList<i32>,
     distance_to_next_pipe: i32,
-    died: bool,
+    died_horizontally: bool,
+    died_vertically: bool,
     in_pipe: i32,
 }
 
@@ -30,7 +31,8 @@ impl Board {
             bird_height: BOARD_HEIGHT / 2,
             pipe_holes: LinkedList::new(),
             distance_to_next_pipe: PIPES_DISTANCE - 1,
-            died: false,
+            died_horizontally: false,
+            died_vertically: false,
             in_pipe: 0,
         };
         board.reset_board();
@@ -46,7 +48,17 @@ impl Board {
         self.score = 0;
         self.bird_height = BOARD_HEIGHT / 2;
         self.distance_to_next_pipe = PIPES_DISTANCE;
-        self.died = false;
+        self.died_horizontally = false;
+        self.died_vertically = false;
+    }
+
+    fn in_hole(&self) -> bool {
+        let center_of_hole = self
+            .pipe_holes
+            .front()
+            .expect("m_pipe_holes was empty when trying to advance");
+        self.bird_height <= center_of_hole + PIPES_HOLE_SIZE / 2
+            && self.bird_height >= center_of_hole - PIPES_HOLE_SIZE / 2
     }
 
     pub fn advance(&mut self, jump: bool) {
@@ -55,15 +67,11 @@ impl Board {
         } else {
             self.bird_height -= 1;
         }
-        let center_of_hole = self
-            .pipe_holes
-            .front()
-            .expect("m_pipe_holes was empty when trying to advance");
-        if (self.distance_to_next_pipe == 1 || self.distance_to_next_pipe == 0)
-            && (self.bird_height > center_of_hole + PIPES_HOLE_SIZE / 2
-                || self.bird_height < center_of_hole - PIPES_HOLE_SIZE / 2)
-        {
-            self.died = true;
+
+        if self.distance_to_next_pipe == 1 && !self.in_hole() {
+            self.died_horizontally = true;
+        } else if self.distance_to_next_pipe == 0 && !self.in_hole() {
+            self.died_vertically = true;
         } else if self.distance_to_next_pipe == 0 && self.in_pipe == PIPE_WIDTH - 1 {
             self.distance_to_next_pipe = PIPES_DISTANCE;
             self.in_pipe = 0;
@@ -78,25 +86,37 @@ impl Board {
     }
 
     pub fn lost(&self) -> bool {
-        self.died
+        self.died_horizontally || self.died_vertically
     }
 
     pub fn consult_score(&self) -> u32 {
         self.score
     }
 
-    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
-        let mut lines: Vec<Line> = Vec::new();
+    fn push_horizontal_board(lines: &mut Vec<Line>, up: bool) {
         let mut spans: String = String::new();
-        spans += "╭";
+        if up {
+            spans += "╭";
+        } else {
+            spans += "╰";
+        }
         for _ in 0..BOARD_WIDHT + PIPES_DISTANCE {
             spans += "─";
         }
-        spans += "╮";
+        if up {
+            spans += "╮";
+        } else {
+            spans += "╯";
+        }
         lines.push(Line::from(Span::styled(
             spans,
             Style::default().fg(Color::DarkGray),
         )));
+    }
+
+    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
+        let mut lines: Vec<Line> = Vec::new();
+        Self::push_horizontal_board(&mut lines, true);
         let mut pipe: String = String::new();
         for _ in 0..PIPE_WIDTH {
             pipe.push('█');
@@ -106,21 +126,21 @@ impl Board {
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
             let mut number_of_spaces = self.distance_to_next_pipe;
             if line == self.bird_height {
-                match self.died {
-                    true => spans.push(Span::styled("󰯈", Style::default().fg(Color::Red))),
-                    false => spans.push(Span::styled("󱗆", Style::default().fg(Color::Blue))),
+                if self.died_vertically || self.died_horizontally {
+                    spans.push(Span::styled("󰯈", Style::default().fg(Color::Red)));
+                } else {
+                    spans.push(Span::styled("󱗆", Style::default().fg(Color::Blue)));
                 }
                 number_of_spaces -= 1;
             }
             for _ in 0..number_of_spaces {
                 spans.push(Span::styled(" ", Style::default().fg(Color::Green)));
             }
-            let mut case_bird_dead: bool = false;
+            let mut first_pipe = true;
             for hole in self.pipe_holes.iter() {
                 if line > hole + PIPES_HOLE_SIZE / 2 || line < hole - PIPES_HOLE_SIZE / 2 {
-                    if line == self.bird_height && self.died && !case_bird_dead {
+                    if line == self.bird_height && self.died_vertically && first_pipe {
                         spans.push(Span::styled("█", Style::default().fg(Color::Green)));
-                        case_bird_dead = true;
                     } else {
                         spans.push(Span::styled(
                             pipe.clone(),
@@ -135,6 +155,7 @@ impl Board {
                 for _ in 0..PIPES_DISTANCE {
                     spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
                 }
+                first_pipe = false;
             }
             for _ in self.distance_to_next_pipe..PIPES_DISTANCE {
                 spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
@@ -142,16 +163,7 @@ impl Board {
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
             lines.push(Line::from(spans));
         }
-        let mut spans: String = String::new();
-        spans += "╰";
-        for _ in 0..BOARD_WIDHT + PIPES_DISTANCE {
-            spans += "─";
-        }
-        spans += "╯";
-        lines.push(Line::from(Span::styled(
-            spans,
-            Style::default().fg(Color::DarkGray),
-        )));
+        Self::push_horizontal_board(&mut lines, false);
         if !message.is_empty() {
             lines.push(Line::from(Span::styled(message, color)));
             lines.push(Line::from(Span::styled(
