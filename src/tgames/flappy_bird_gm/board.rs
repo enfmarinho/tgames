@@ -136,16 +136,28 @@ impl Board {
             let mut first_pipe = true;
             for hole in self.pipe_holes.iter() {
                 if line > hole + PIPES_HOLE_SIZE / 2 || line < hole - PIPES_HOLE_SIZE / 2 {
-                    if line == self.bird_height && self.died_vertically && first_pipe {
-                        spans.push(Span::styled("█", Style::default().fg(Color::Green)));
+                    let start = if line == self.bird_height && self.died_vertically && first_pipe {
+                        self.in_pipe + 1
+                    } else if first_pipe {
+                        self.in_pipe
                     } else {
-                        let start = if first_pipe { self.in_pipe } else { 0 };
-                        for _ in start..PIPE_WIDTH {
-                            spans.push(Span::styled("█", Style::default().fg(Color::Green)));
-                        }
+                        0
+                    };
+                    for _ in start..PIPE_WIDTH {
+                        spans.push(Span::styled("█", Style::default().fg(Color::Green)));
                     }
                 } else {
-                    for _ in 0..PIPE_WIDTH {
+                    let start = if first_pipe
+                        && self.bird_height == line
+                        && self.distance_to_next_pipe == 0
+                    {
+                        self.in_pipe + 1
+                    } else if first_pipe {
+                        self.in_pipe
+                    } else {
+                        0
+                    };
+                    for _ in start..PIPE_WIDTH {
                         spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
                     }
                 }
