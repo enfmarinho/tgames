@@ -5,13 +5,14 @@ use ratatui::{
 };
 use std::collections::LinkedList;
 
-const BOARD_HEIGHT: i32 = 20;
 const NUMBER_OF_PIPES: i32 = 5; // Should not be smaller than 2
 const PIPE_WIDTH: i32 = 2;
-const PIPES_DISTANCE: i32 = 8;
-const PIPES_HOLE_SIZE: i32 = 4;
+const PIPES_DISTANCE: i32 = 10;
+const PIPES_HOLE_SIZE: i32 = 3;
 const MAX_DISTANCE_BETWEEN_HOLES: i32 = 5;
 const JUMP: i32 = 2;
+const BOARD_HEIGHT: i32 = 20;
+const BOARD_WIDHT: i32 = (PIPE_WIDTH + PIPES_DISTANCE) * NUMBER_OF_PIPES;
 
 pub struct Board {
     score: u32,
@@ -84,7 +85,7 @@ impl Board {
         self.score
     }
 
-    pub fn display_board(&self, _message: String) -> Vec<Line> {
+    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         let mut spans: String = String::new();
         spans += "╭";
@@ -151,6 +152,13 @@ impl Board {
             spans,
             Style::default().fg(Color::DarkGray),
         )));
+        if !message.is_empty() {
+            lines.push(Line::from(Span::styled(message, color)));
+            lines.push(Line::from(Span::styled(
+                "Press enter to continue.",
+                Style::default(),
+            )));
+        }
         lines
     }
 

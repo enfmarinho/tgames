@@ -6,6 +6,7 @@ use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyMo
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
+    style::Color,
     style::Stylize,
     widgets::{Block, Borders, Paragraph},
     Terminal,
@@ -15,7 +16,7 @@ use std::{
     time::Duration,
 };
 
-const FPS_CHANGE: u64 = 3;
+const FPS_CHANGE: u64 = 4;
 
 enum PlayOpt {
     Jump,
@@ -105,22 +106,29 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
     fn render(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Menu => {
-                self.display_screen(self.record, Self::menu_guide(), "Menu", "Record", "")?
-            }
+            GameState::Menu => self.display_screen(
+                self.record,
+                Self::menu_guide(),
+                "Menu",
+                "Record",
+                "",
+                Color::default(),
+            )?,
             GameState::Playing => self.display_screen(
                 self.board.consult_score(),
                 Self::play_guide(),
                 "Game board",
                 "Score",
                 "",
+                Color::default(),
             )?,
             GameState::Lost => self.display_screen(
                 self.record,
                 Self::menu_guide(),
                 "Menu",
                 "Record",
-                "You lost!\nPress enter to try again.",
+                "You lost!",
+                Color::Red,
             )?,
             GameState::Helping => self.diplay_game_rules()?,
             GameState::Pause => self.display_screen(
@@ -128,7 +136,8 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                 Self::play_guide(),
                 "Game board",
                 "Score",
-                "Game is paused.\nPress enter to continue.",
+                "Game is paused.",
+                Color::default(),
             )?,
             GameState::Quitting => (),
         }
@@ -183,6 +192,7 @@ impl<'a> FlappyBirdGameManager<'a> {
         title: &str,
         score_title: &str,
         message: &str,
+        color: Color,
     ) -> Result<()> {
         self.terminal.draw(|frame| {
             let layout = Layout::default()
@@ -195,7 +205,7 @@ impl<'a> FlappyBirdGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.board.display_board(message.to_string())).block(
+                Paragraph::new(self.board.display_board(message.to_string(), color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
