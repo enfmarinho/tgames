@@ -166,7 +166,7 @@ impl Board {
                 }
                 first_pipe = false;
             }
-            for _ in self.distance_to_next_pipe..PIPES_DISTANCE {
+            for _ in self.distance_to_next_pipe..PIPES_DISTANCE + self.in_pipe {
                 spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
             }
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
