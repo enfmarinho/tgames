@@ -84,13 +84,12 @@ impl Board {
         self.score
     }
 
-    // TODO adapt this function.
-    pub fn display_board(&mut self, _message: String) -> Vec<Line> {
+    pub fn display_board(&self, _message: String) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
         let mut spans: String = String::new();
         spans += "╭";
-        for _ in 1..20 {
-            spans += "──";
+        for _ in 0..BOARD_WIDHT + PIPES_DISTANCE {
+            spans += "─";
         }
         spans += "╮";
         lines.push(Line::from(Span::styled(
@@ -115,26 +114,37 @@ impl Board {
             for _ in 0..number_of_spaces {
                 spans.push(Span::styled(" ", Style::default().fg(Color::Green)));
             }
+            let mut case_bird_dead: bool = false;
             for hole in self.pipe_holes.iter() {
                 if line > hole + PIPES_HOLE_SIZE / 2 || line < hole - PIPES_HOLE_SIZE / 2 {
-                    spans.push(Span::styled(
-                        pipe.clone(),
-                        Style::default().fg(Color::Green),
-                    ));
+                    if line == self.bird_height && self.died && !case_bird_dead {
+                        spans.push(Span::styled("█", Style::default().fg(Color::Green)));
+                        case_bird_dead = true;
+                    } else {
+                        spans.push(Span::styled(
+                            pipe.clone(),
+                            Style::default().fg(Color::Green),
+                        ));
+                    }
                 } else {
-                    spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
+                    for _ in 0..PIPE_WIDTH {
+                        spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
+                    }
                 }
                 for _ in 0..PIPES_DISTANCE {
                     spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
                 }
+            }
+            for _ in self.distance_to_next_pipe..PIPES_DISTANCE {
+                spans.push(Span::styled(" ", Style::default().fg(Color::Gray)));
             }
             spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
             lines.push(Line::from(spans));
         }
         let mut spans: String = String::new();
         spans += "╰";
-        for _ in 1..20 {
-            spans += "──";
+        for _ in 0..BOARD_WIDHT + PIPES_DISTANCE {
+            spans += "─";
         }
         spans += "╯";
         lines.push(Line::from(Span::styled(
