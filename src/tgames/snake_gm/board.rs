@@ -99,13 +99,6 @@ impl Board {
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
         let mut lines: Vec<Line> = Vec::new();
-        if !message.is_empty() {
-            lines.push(Line::from(Span::styled(message, color)));
-            lines.push(Line::from(Span::styled(
-                "Press enter to play again.",
-                Style::default(),
-            )));
-        }
         let mut spans: String = String::new();
         spans += "╭";
         for _counter in 1..self.width + 1 {
@@ -148,6 +141,13 @@ impl Board {
         lines.push(Line::from(
             Span::styled(spans, Style::default()).fg(Color::DarkGray),
         ));
+        if !message.is_empty() {
+            lines.push(Line::from(Span::styled(message, color)));
+            lines.push(Line::from(Span::styled(
+                "Press enter to play again.",
+                Style::default(),
+            )));
+        }
         lines
     }
 

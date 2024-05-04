@@ -164,7 +164,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 Self::menu_guide(),
                 "Menu",
                 "Score",
-                "Game is paused.\nPress enter to continue.",
+                "Game is paused. Press enter to continue.",
             )?,
             GameState::Lost => self.display_screen(
                 self.score_record,
@@ -172,7 +172,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 Self::menu_guide(),
                 "Menu",
                 "Record",
-                "You lost!\nPress enter to try again.",
+                "You lost! Press enter to try again.",
             )?,
             GameState::Quitting => (),
         }
