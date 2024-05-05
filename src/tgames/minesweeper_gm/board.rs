@@ -102,7 +102,8 @@ impl Board {
         }
         self.board = vec![Square::Close(0); self.board_info.width * self.board_info.height];
         for _ in 0..self.board_info.number_of_bombs {
-            let mut index = thread_rng().gen_range(0..self.board_info.height);
+            let mut index =
+                thread_rng().gen_range(0..self.board_info.height * self.board_info.width);
             while self.board[index] == Square::Bomb {
                 index += 1;
                 index %= self.board.len();
@@ -117,13 +118,14 @@ impl Board {
         self.curr_line = 0;
         self.curr_column = 0;
         self.marked_squares = 0;
+        self.score = 0;
         self.revealed_bomb = NOT_REVEALED;
     }
 
     fn update_square_counter(&mut self, line: usize, column: usize) {
         match self.consult_position(line, column) {
-            Square::Marked(_) | Square::Bomb => return,
-            Square::Close(_) | Square::Opened(_) => (),
+            Square::Opened(_) | Square::Bomb => return,
+            Square::Close(_) | Square::Marked(_) => (),
         }
         let mut counter = 0;
         for line_offset in -1..2 {
@@ -151,7 +153,15 @@ impl Board {
                 self.marked_squares += 1;
                 *self.get_position() = Square::Marked(true);
             }
-            Square::Opened(_) | Square::Marked(_) => (),
+            Square::Marked(correct) => {
+                self.marked_squares -= 1;
+                if correct {
+                    *self.get_position() = Square::Bomb;
+                } else {
+                    self.update_square_counter(self.curr_line, self.curr_column);
+                }
+            }
+            Square::Opened(_) => (),
         }
     }
 
@@ -164,6 +174,7 @@ impl Board {
             }
             Square::Close(amount) => {
                 *self.get_position() = Square::Opened(amount);
+                self.score += 1;
                 true
             }
             Square::Opened(_) | Square::Marked(_) => false,
