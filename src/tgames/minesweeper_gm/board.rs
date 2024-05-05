@@ -246,7 +246,6 @@ impl Board {
 
     pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
         let mut lines = Vec::new();
-        lines.push(Line::from(Span::styled(message, color)));
         self.push_horizontal_board(&mut lines, true);
         for line in 0..self.board_info.height {
             let mut spans = Vec::new();
@@ -320,8 +319,8 @@ impl Board {
             spans.push(Span::styled(" │", Style::default().fg(Color::DarkGray)));
             lines.push(Line::from(spans));
         }
-
         self.push_horizontal_board(&mut lines, false);
+        lines.push(Line::from(Span::styled(message, color)));
         lines
     }
 

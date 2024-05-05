@@ -49,7 +49,7 @@ pub struct MinesweeperGameManager<'a> {
 }
 
 impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
-    fn process_events(&mut self) -> std::io::Result<()> {
+    fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
@@ -59,7 +59,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         }
         Ok(())
     }
-    fn update(&mut self) -> std::io::Result<()> {
+    fn update(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -93,7 +93,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         }
         Ok(())
     }
-    fn render(&mut self) -> std::io::Result<()> {
+    fn render(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
             GameState::Menu => self.display_screen(
@@ -127,7 +127,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 "Menu",
                 "Record",
                 "You lost, try again!",
-                Color::Green,
+                Color::Red,
             )?,
             GameState::Quitting => (),
         }
