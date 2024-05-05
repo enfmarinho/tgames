@@ -60,7 +60,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
     }
     fn update(&mut self) -> std::io::Result<()> {
         match self.game_state {
-            GameState::Starting => self.game_state = GameState::Menu,
+            GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
             GameState::Menu | GameState::Won | GameState::Lost => match &self.menu_opt {
                 MenuOpt::Play(difficult) => {
@@ -177,7 +177,7 @@ impl<'a> MinesweeperGameManager<'a> {
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.board.display_board(message, color)).block(
+                Paragraph::new(self.board.display_board(message.to_string(), color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)
@@ -210,7 +210,30 @@ impl<'a> MinesweeperGameManager<'a> {
     }
 
     fn display_game_rules(&mut self) -> Result<()> {
-        let message = String::from("TODO");
+        let message = String::from(
+"Picture a grid, like a little field, filled with hidden mines and numbers. Your job is to
+uncover all the squares on the grid without detonating any mines.
+
+You start by clicking on any square to reveal what's underneath. If you're lucky, you might
+uncover an empty square, which shows you the number of neighboring squares that contain mines.
+
+The numbers are your clues. They tell you how many mines are adjacent to that square. So, if
+you see a \"1\" next to a square, it means there's one mine nearby. A \"2\" means two mines,
+and so on.
+
+But here's the catch: if you click on a square and it reveals a mine, boom! Game over. So, you
+have to use logic and deduction to figure out where the mines are hidden and safely mark them 
+with flags.
+
+You can mark a square as a potential mine by pressing 'm'. This helps you keep track of where
+you think the mines might be.
+
+The game ends when you've uncovered all the squares that don't contain mines. If you manage to 
+clear the entire grid without detonating any mines, you win!
+
+So, in summary: click to uncover squares, use the numbers to avoid the mines, and mark potential
+mines with flags. It's a classic game of strategy and deduction that's perfect for relaxing and 
+exercising your brain!");
         self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
