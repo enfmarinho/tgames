@@ -41,9 +41,9 @@ const NOT_REVEALED: SquarePosition = SquarePosition {
 
 #[derive(PartialEq, Clone)]
 enum Square {
-    Close(u32),
+    Close(usize),
     Marked(bool),
-    Opened(u32),
+    Opened(usize),
     Bomb,
 }
 
@@ -80,7 +80,7 @@ impl Board {
     pub fn won(&self) -> bool {
         for line in 0..self.board_info.height {
             for column in 0..self.board_info.width {
-                if let Square::Close(_) = self.consult_position(line, column) {
+                if let Square::Close(_) = *self.consult_position(line, column) {
                     return false;
                 }
             }
@@ -131,7 +131,7 @@ impl Board {
         }
         self.score = 0;
         self.revealed_bomb = NOT_REVEALED;
-        self.reveal_block();
+        self.reveal_block(self.curr_line, self.curr_column);
     }
 
     fn update_square_counter(&mut self, line: usize, column: usize) {
@@ -177,8 +177,25 @@ impl Board {
         }
     }
 
-    pub fn reveal_block(&mut self) {
-        // todo!()
+    pub fn reveal_block(&mut self, line: usize, column: usize) {
+        self.score += 1;
+        let amount = if let Square::Close(amount) = *self.consult_position(line, column) {
+            amount
+        } else {
+            return;
+        };
+        self.board[line * self.board_info.width + column] = Square::Opened(amount);
+        if amount != 0 {
+            return;
+        }
+        let offsets = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+        for (vertical_offset, horizontal_offset) in offsets {
+            let line = line as i32 + vertical_offset;
+            let column = column as i32 + horizontal_offset;
+            if self.in_bounds(line, column) {
+                self.reveal_block(line as usize, column as usize);
+            }
+        }
     }
 
     pub fn reveal(&mut self) {
@@ -196,7 +213,7 @@ impl Board {
             Square::Opened(_) | Square::Marked(_) => false,
         };
         if revealed {
-            self.reveal_block();
+            self.reveal_block(self.curr_line, self.curr_column);
         }
     }
 
