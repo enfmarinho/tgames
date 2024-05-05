@@ -226,7 +226,10 @@ impl Board {
                 if line as i32 == self.revealed_bomb.line
                     && column as i32 == self.revealed_bomb.column
                 {
-                    spans.push(Span::styled("󰚑 ", Style::default().fg(Color::LightRed)));
+                    spans.push(Span::styled(
+                        "󰚑 ",
+                        Style::default().fg(Color::Black).bg(Color::LightRed),
+                    ));
                     continue;
                 }
                 let background_color = if line == self.curr_line && column == self.curr_column {
@@ -254,17 +257,34 @@ impl Board {
                             Style::default().fg(color).bg(background_color),
                         ));
                     }
-                    Square::Marked(_) => {
-                        spans.push(
-                            Span::styled("󰈿 ", Style::default().fg(Color::Red))
-                                .bg(background_color),
-                        );
+                    Square::Marked(correct) => {
+                        if self.revealed_bomb == NOT_REVEALED || correct {
+                            spans.push(
+                                Span::styled("󰈿 ", Style::default().fg(Color::Red))
+                                    .bg(background_color),
+                            );
+                        } else {
+                            spans.push(
+                                Span::styled("󰛅 ", Style::default().fg(Color::DarkGray))
+                                    .bg(background_color),
+                            );
+                        }
                     }
-                    Square::Close(_) | Square::Bomb => {
+                    Square::Close(_) => {
                         spans.push(
                             Span::styled(" ", Style::default().fg(Color::DarkGray))
                                 .bg(background_color),
                         );
+                    }
+                    Square::Bomb => {
+                        if self.revealed_bomb != NOT_REVEALED {
+                            spans.push(Span::styled("󰚑 ", Style::default().fg(Color::LightRed)));
+                        } else {
+                            spans.push(
+                                Span::styled(" ", Style::default().fg(Color::DarkGray))
+                                    .bg(background_color),
+                            );
+                        }
                     }
                 }
             }
