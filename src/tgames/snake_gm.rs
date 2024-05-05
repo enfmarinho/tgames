@@ -157,9 +157,8 @@ impl<'a> SnakeGameManager<'a> {
 
     fn display_game_rules(&mut self) -> Result<()> {
         let message = String::from(
-            "Imagine you're a little snake, slithering around a tiny world, looking
-for food. In this game, you control the snake's movements, guiding it across
-the screen.
+            "Imagine you're a little snake, slithering around a tiny world, looking for food. In 
+this game, you control the snake's movements, guiding it across the screen.
 
 Your goal is simple: eat as much food as you can without crashing into anything. Food
 appears randomly on the screen. When your snake munches on the food, it grows longer.

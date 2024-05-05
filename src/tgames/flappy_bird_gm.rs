@@ -168,11 +168,11 @@ impl<'a> FlappyBirdGameManager<'a> {
 
     fn diplay_game_rules(&mut self) -> Result<()> {
         let message = String::from(
-            "Imagine you're a little bird trying to navigate through a series of pipes.
-The game starts with you perched on the ground, and with each tap or click, you flap
-your wings and ascend a bit.
+            "Imagine you're a little bird trying to navigate through a series of pipes. The game 
+starts with you flying in the sky, and with each jump, you flap your wings and ascend 
+a bit.
 
-Your goal is to fly as far as you can without crashing into any of the pipes. These
+Your goal is to fly as far as you can without crashing into any of the pipes. These 
 pipes have openings that you need to pass through, kind of like flying through a maze.
 Each successful pass scores you a point.
 

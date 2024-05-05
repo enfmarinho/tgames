@@ -222,26 +222,26 @@ impl<'a> G2048GameManager<'a> {
 
     fn display_game_rules(&mut self) -> Result<()> {
         let message = String::from(
-            "Picture a tiny grid filled with numbered tiles, and your job is to combine
-them to reach the elusive number 2048.
+            "Picture a tiny grid filled with numbered tiles, and your job is to combine them to 
+reach the elusive number 2048.
 
-To play, you'll swipe the tiles in four directions: up, down, left, or right. Each time
-you swipe, all the tiles on the grid move as far as they can in that direction.
+To play, you'll swipe the tiles in four directions: up, down, left, or right. Each 
+time you swipe, all the tiles on the grid move as far as they can in that direction.
 
-Now, here's where the magic happens: when two tiles with the same number collide as you
-swipe, they merge into one tile with double the value. For example, if you combine two 
-\"2\" tiles, they become a single \"4\" tile.
+Now, here's where the magic happens: when two tiles with the same number collide as
+you swipe, they merge into one tile with double the value. For example, if you combine 
+two \"2\" tiles, they become a single \"4\" tile.
 
 The goal is to keep combining tiles to create larger and larger numbers until you reach
-2048. But beware! With each move you make, a new tile appears on the grid, threatening to
-fill it up and block your path to victory.
+2048. But beware! With each move you make, a new tile appears on the grid, threatening 
+to fill it up and block your path to victory.
 
-The game ends when you can't make any more moves, either because the grid is full or because
-you can't combine any more tiles. So, strategize wisely, plan your moves, and see if you can 
-reach that elusive 2048 tile!
+The game ends when you can't make any more moves, either because the grid is full or 
+because you can't combine any more tiles. So, strategize wisely, plan your moves, and 
+see if you can reach that elusive 2048 tile!
 
-It's a simple yet addictive puzzle that'll have you sliding tiles and chasing that elusive 
-number for hours on end. Enjoy the challenge!",
+It's a simple yet addictive puzzle that'll have you sliding tiles and chasing that 
+elusive number for hours on end. Enjoy the challenge!",
         );
         self.terminal.draw(|frame| {
             let area = frame.size();
