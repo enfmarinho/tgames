@@ -153,7 +153,7 @@ impl<'a> MinesweeperGameManager<'a> {
 
     fn menu_guide() -> String {
         String::from(
-            "ENTER    - Play last difficult played\ne        - play easy game\nm        - play medium game\nh        - play hard game\nf        - Decrase fps\nF        - Increase fps\n?        - Display game rules\nESC or q - Go to main menu\n",
+            "ENTER    - Play last difficult played\ne        - Play easy game\nm        - Play medium game\nh        - Play hard game\n?        - Display game rules\nESC or q - Go to main menu\n",
         )
     }
 
