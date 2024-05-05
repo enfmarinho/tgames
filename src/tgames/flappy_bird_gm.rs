@@ -167,7 +167,25 @@ impl<'a> FlappyBirdGameManager<'a> {
     }
 
     fn diplay_game_rules(&mut self) -> Result<()> {
-        let message = String::from("TODO write game rules.");
+        let message = String::from(
+            "Imagine you're a little bird trying to navigate through a series of pipes.
+The game starts with you perched on the ground, and with each tap or click, you flap
+your wings and ascend a bit.
+
+Your goal is to fly as far as you can without crashing into any of the pipes. These
+pipes have openings that you need to pass through, kind of like flying through a maze.
+Each successful pass scores you a point.
+
+But here's the tricky part: the pipes are spaced at different heights, and they're always
+moving towards you. So, you have to time your flaps just right to avoid hitting them.
+
+If you touch a pipe or crash into the ground, it's game over, and you'll have to start
+again from the beginning. The challenge lies in mastering the timing of your flaps to 
+navigate through the narrow gaps between the pipes.
+
+So, to sum it up: flap your wings to fly, avoid the pipes, and see how far you can go. 
+It's a simple yet surprisingly addictive game that'll keep you entertained for hours!",
+        );
         self.terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
@@ -177,7 +195,7 @@ impl<'a> FlappyBirdGameManager<'a> {
 
     fn menu_guide() -> String {
         String::from(
-            "ENTER or p - Play\n?          - Display game rules\nESC or q   - Go to main menu\n",
+            "ENTER or p - Play\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
         )
     }
 
@@ -197,7 +215,7 @@ impl<'a> FlappyBirdGameManager<'a> {
         self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(90), Constraint::Fill(1)])
+                .constraints([Constraint::Percentage(80), Constraint::Fill(1)])
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Horizontal)
@@ -282,7 +300,7 @@ impl<'a> FlappyBirdGameManager<'a> {
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('F'),
-                    modifiers: KeyModifiers::NONE,
+                    modifiers: KeyModifiers::SHIFT,
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
