@@ -19,7 +19,7 @@ const MEDIUM_BOARD_INFO: BoardInfo = BoardInfo {
 const HARD_BOARD_INFO: BoardInfo = BoardInfo {
     height: 16,
     width: 30,
-    number_of_bombs: 99,
+    number_of_bombs: 100,
 };
 
 #[derive(Clone)]
