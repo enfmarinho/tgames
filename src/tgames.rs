@@ -27,11 +27,11 @@ use strum_macros::{Display, EnumCount as EnumCountMacro, EnumIter, FromRepr};
 pub enum Games {
     Snake,
     Tetris,
-    #[strum(to_string = "2048")]
-    G2048,
+    Minesweeper,
     #[strum(to_string = "Flappy bird")]
     FlappyBird,
-    Minesweeper,
+    #[strum(to_string = "2048")]
+    G2048,
     #[strum(to_string = "")]
     None,
 }
@@ -289,9 +289,9 @@ the application (obviously).",
         match game {
             Games::Snake => SnakeGameManager::new(&mut self.terminal).run()?,
             Games::Tetris => TetrisGameManager::new(&mut self.terminal).run()?,
-            Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
-            Games::FlappyBird => FlappyBirdGameManager::new(&mut self.terminal).run()?,
             Games::Minesweeper => MinesweeperGameManager::new(&mut self.terminal).run()?,
+            Games::FlappyBird => FlappyBirdGameManager::new(&mut self.terminal).run()?,
+            Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
             Games::None => (),
         }
         Ok(())
