@@ -1,12 +1,13 @@
 # tgames
-Terminal mini games emulator featuring famous games such as Snake, Tetris, 2048
+Terminal mini games emulator featuring famous games such as Snake, Tetris, Minesweeper 
 and others.
 
 # List of games
 - Snake
 - Tetris
-- 2048
+- Minesweeper
 - Flappy Bird
+- 2048
 
 # Installation
 The installation can be done via cargo, just use:
