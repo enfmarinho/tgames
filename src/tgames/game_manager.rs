@@ -38,3 +38,9 @@ pub enum Directions {
     Left,
     Right,
 }
+
+pub enum Difficult {
+    Easy,
+    Medium,
+    Hard,
+}
