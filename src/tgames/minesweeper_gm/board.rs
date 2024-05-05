@@ -205,11 +205,7 @@ impl Board {
                 self.revealed_bomb.column = self.curr_column as i32;
                 true
             }
-            Square::Close(amount) => {
-                *self.get_position() = Square::Opened(amount);
-                self.score += 1;
-                true
-            }
+            Square::Close(_) => true,
             Square::Opened(_) | Square::Marked(_) => false,
         };
         if revealed {
