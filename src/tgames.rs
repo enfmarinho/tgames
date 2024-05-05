@@ -142,14 +142,17 @@ impl TGamesManager {
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+                .constraints([
+                    Constraint::Percentage(40),
+                    Constraint::Percentage(40),
+                    Constraint::Percentage(20),
+                ])
                 .split(layout[1]);
 
             frame.render_widget(
                 Paragraph::new(lines).block(
                     Block::new()
                         .borders(Borders::ALL)
-                        // .border_type(ratatui::widgets::BorderType::Rounded)
                         .title("tgames")
                         .title_alignment(Alignment::Center),
                 ),
@@ -175,6 +178,11 @@ impl TGamesManager {
                 ),
                 sub_layout[1],
             );
+
+            frame.render_widget(
+                Paragraph::new(Self::developer_message()).block(Block::new().borders(Borders::ALL)),
+                sub_layout[2],
+            );
         })?;
         Ok(())
     }
@@ -195,6 +203,16 @@ fit. Note that the screen needs to be re-rendered
 to fit with the different font size, so press any 
 valid key to do that, avoiding the ones that quit 
 the application (obviously).",
+        )
+    }
+
+    fn developer_message() -> String {
+        String::from(
+            "This project in current under developent so any suggestions,
+feature request or bug report are welcome, just create an issue
+on the github repository \"enfmarinho/tgames\", the link can 
+be found on the crates page of this project. Also considering 
+giving a start on github!",
         )
     }
 
