@@ -159,7 +159,7 @@ impl<'a> MinesweeperGameManager<'a> {
 
     fn play_guide() -> String {
         String::from(
-            "ENTER - Reveal square\n! or m - Mark square\nw or k or    - Move up\ns or j or    - Move down\nd or l or    - Move right\na or h or    - Move left\nESC or q      - Go to menu",
+            "ENTER or r    - Reveal square\n! or m        - Mark square\nw or k or    - Move up\ns or j or    - Move down\nd or l or    - Move right\na or h or    - Move left\nESC or q      - Go to menu",
         )
     }
 
@@ -439,6 +439,12 @@ exercising your brain!");
                 }
                 Event::Key(KeyEvent {
                     code: KeyCode::Enter,
+                    modifiers: KeyModifiers::NONE,
+                    kind: KeyEventKind::Press,
+                    ..
+                })
+                | Event::Key(KeyEvent {
+                    code: KeyCode::Char('r'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
