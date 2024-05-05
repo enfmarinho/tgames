@@ -73,7 +73,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             },
             GameState::Playing => match &self.play_opt {
                 PlayOpt::Reveal => {
-                    self.board.revel();
+                    self.board.reveal();
                     if self.board.won() {
                         self.game_state = GameState::Won;
                     } else if self.board.lost() {

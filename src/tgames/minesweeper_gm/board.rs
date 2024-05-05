@@ -26,7 +26,7 @@ const HARD_BOARD_INFO: BoardInfo = BoardInfo {
 struct BoardInfo {
     pub height: usize,
     pub width: usize,
-    pub number_of_bombs: usize,
+    pub number_of_bombs: i32,
 }
 
 #[derive(PartialEq, Eq)]
@@ -52,7 +52,6 @@ pub struct Board {
     board_info: BoardInfo,
     curr_line: usize,
     curr_column: usize,
-    marked_squares: usize,
     revealed_bomb: SquarePosition,
     score: usize,
 }
@@ -68,7 +67,6 @@ impl Board {
             },
             curr_line: 0,
             curr_column: 0,
-            marked_squares: 0,
             revealed_bomb: SquarePosition {
                 line: -1,
                 column: -1,
@@ -94,6 +92,10 @@ impl Board {
         self.revealed_bomb != NOT_REVEALED
     }
 
+    pub fn bombs(&self) -> i32 {
+        self.board_info.number_of_bombs
+    }
+
     pub fn reset(&mut self, difficult: &Difficult) {
         match difficult {
             Difficult::Easy => self.board_info = EASY_BOARD_INFO,
@@ -102,8 +104,7 @@ impl Board {
         }
         self.board = vec![Square::Close(0); self.board_info.width * self.board_info.height];
         for _ in 0..self.board_info.number_of_bombs {
-            let mut index =
-                thread_rng().gen_range(0..self.board_info.height * self.board_info.width);
+            let mut index = thread_rng().gen_range(0..self.board.len());
             while self.board[index] == Square::Bomb {
                 index += 1;
                 index %= self.board.len();
@@ -115,11 +116,22 @@ impl Board {
                 self.update_square_counter(line, column);
             }
         }
-        self.curr_line = 0;
-        self.curr_column = 0;
-        self.marked_squares = 0;
+        self.curr_line = thread_rng().gen_range(0..self.board_info.height);
+        self.curr_column = thread_rng().gen_range(0..self.board_info.width);
+        let mut counter = 0;
+        while *self.consult_board() != Square::Close(0) {
+            self.curr_column += 1;
+            self.curr_column %= self.board_info.width;
+            counter += 1;
+            if counter == self.board_info.width {
+                counter = 0;
+                self.curr_line += 1;
+                self.curr_line %= self.board_info.height;
+            }
+        }
         self.score = 0;
         self.revealed_bomb = NOT_REVEALED;
+        self.reveal_block();
     }
 
     fn update_square_counter(&mut self, line: usize, column: usize) {
@@ -146,15 +158,15 @@ impl Board {
     pub fn mark(&mut self) {
         match *self.consult_board() {
             Square::Close(_) => {
-                self.marked_squares += 1;
+                self.board_info.number_of_bombs -= 1;
                 *self.get_position() = Square::Marked(false);
             }
             Square::Bomb => {
-                self.marked_squares += 1;
+                self.board_info.number_of_bombs -= 1;
                 *self.get_position() = Square::Marked(true);
             }
             Square::Marked(correct) => {
-                self.marked_squares -= 1;
+                self.board_info.number_of_bombs += 1;
                 if correct {
                     *self.get_position() = Square::Bomb;
                 } else {
@@ -165,7 +177,11 @@ impl Board {
         }
     }
 
-    pub fn revel(&mut self) {
+    pub fn reveal_block(&mut self) {
+        // todo!()
+    }
+
+    pub fn reveal(&mut self) {
         let revealed = match *self.get_position() {
             Square::Bomb => {
                 self.revealed_bomb.line = self.curr_line as i32;
@@ -180,7 +196,7 @@ impl Board {
             Square::Opened(_) | Square::Marked(_) => false,
         };
         if revealed {
-            // todo!("Implement algorithm to revel squares")
+            self.reveal_block();
         }
     }
 
@@ -290,15 +306,6 @@ impl Board {
             }
             spans.push(Span::styled(" │", Style::default().fg(Color::DarkGray)));
             lines.push(Line::from(spans));
-            let mut empty_line = String::from('│');
-            for _ in 0..self.board_info.width * 2 {
-                empty_line.push(' ');
-            }
-            empty_line.push('│');
-            // lines.push(Line::from(Span::styled(
-            //     empty_line,
-            //     Style::default().fg(Color::DarkGray),
-            // )));
         }
 
         self.push_horizontal_board(&mut lines, false);
