@@ -68,8 +68,7 @@ impl Board {
         } else {
             self.bird_height -= 1;
         }
-
-        if self.distance_to_next_pipe == 1 && !self.in_hole() {
+        if (self.distance_to_next_pipe == 1 && !self.in_hole()) || self.bird_height == 0 {
             self.died_horizontally = true;
         } else if self.distance_to_next_pipe == 0 && !self.in_hole() {
             self.died_vertically = true;
