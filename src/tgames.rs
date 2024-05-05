@@ -144,8 +144,8 @@ impl TGamesManager {
                 .direction(Direction::Vertical)
                 .constraints([
                     Constraint::Percentage(40),
-                    Constraint::Percentage(40),
-                    Constraint::Percentage(20),
+                    Constraint::Percentage(30),
+                    Constraint::Percentage(30),
                 ])
                 .split(layout[1]);
 
@@ -208,11 +208,12 @@ the application (obviously).",
 
     fn developer_message() -> String {
         String::from(
-            "This project in current under developent so any suggestions,
-feature request or bug report are welcome, just create an issue
-on the github repository \"enfmarinho/tgames\", the link can 
-be found on the crates page of this project. Also considering 
-giving a start on github!",
+            "This project in current under developent so any
+suggestions, feature request or bug report are
+welcome, just create an issue on the github 
+repository \"enfmarinho/tgames\", the link can be
+found on the crates page of this project. Also 
+considering giving a start on github!",
         )
     }
 
