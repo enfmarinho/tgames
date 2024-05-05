@@ -180,7 +180,12 @@ impl TGamesManager {
             );
 
             frame.render_widget(
-                Paragraph::new(Self::developer_message()).block(Block::new().borders(Borders::ALL)),
+                Paragraph::new(Self::developer_message()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Notice")
+                        .title_alignment(Alignment::Center),
+                ),
                 sub_layout[2],
             );
         })?;
@@ -212,7 +217,7 @@ the application (obviously).",
 suggestions, feature request or bug report are
 welcome, just create an issue on the github 
 repository \"enfmarinho/tgames\", the link can be
-found on the crates page of this project. Also 
+found on the crates.io page of this project. Also 
 considering giving a start on github!",
         )
     }
