@@ -139,7 +139,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     }
 
     fn limit_fps(&self) {
-        std::thread::sleep(std::time::Duration::from_millis(1000 / self.fps));
+        std::thread::sleep(Duration::from_millis(1000 / self.fps));
     }
 }
 impl<'a> SnakeGameManager<'a> {
@@ -240,7 +240,7 @@ trying to beat your high score with each game!",
     }
 
     fn menu_guide() -> String {
-        String::from("ENTER or p - Play\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
+        String::from("ENTER or p - Play\nf          - Decrease fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
         )
     }
 

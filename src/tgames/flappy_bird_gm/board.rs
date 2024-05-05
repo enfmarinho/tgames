@@ -12,7 +12,7 @@ const PIPES_HOLE_SIZE: i32 = 3;
 const MAX_DISTANCE_BETWEEN_HOLES: i32 = 6;
 const JUMP: i32 = 2;
 const BOARD_HEIGHT: i32 = 20;
-const BOARD_WIDHT: i32 = (PIPE_WIDTH + PIPES_DISTANCE) * NUMBER_OF_PIPES;
+const BOARD_WIDTH: i32 = (PIPE_WIDTH + PIPES_DISTANCE) * NUMBER_OF_PIPES;
 
 pub struct Board {
     score: u32,
@@ -100,7 +100,7 @@ impl Board {
         } else {
             spans += "╰";
         }
-        for _ in 0..BOARD_WIDHT + PIPES_DISTANCE {
+        for _ in 0..BOARD_WIDTH + PIPES_DISTANCE {
             spans += "─";
         }
         if up {

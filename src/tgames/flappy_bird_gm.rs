@@ -130,7 +130,7 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                 "You lost!",
                 Color::Red,
             )?,
-            GameState::Helping => self.diplay_game_rules()?,
+            GameState::Helping => self.display_game_rules()?,
             GameState::Pause => self.display_screen(
                 self.board.consult_score(),
                 Self::play_guide(),
@@ -149,7 +149,7 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
     }
 
     fn limit_fps(&self) {
-        std::thread::sleep(std::time::Duration::from_millis(1000 / self.fps));
+        std::thread::sleep(Duration::from_millis(1000 / self.fps));
     }
 }
 
@@ -166,7 +166,7 @@ impl<'a> FlappyBirdGameManager<'a> {
         }
     }
 
-    fn diplay_game_rules(&mut self) -> Result<()> {
+    fn display_game_rules(&mut self) -> Result<()> {
         let message = String::from(
             "Imagine you're a little bird trying to navigate through a series of pipes. The game 
 starts with you flying in the sky, and with each jump, you flap your wings and ascend 
@@ -195,7 +195,7 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
 
     fn menu_guide() -> String {
         String::from(
-            "ENTER or p - Play\nf          - Decrase fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
+            "ENTER or p - Play\nf          - Decrease fps\nF          - Increase fps\n?          - Display game rules\nESC or q   - Go to main menu\n",
         )
     }
 

@@ -167,7 +167,7 @@ impl TGamesManager {
             );
 
             frame.render_widget(
-                Paragraph::new(Self::keybingins_guide()).block(
+                Paragraph::new(Self::keybindings_guide()).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title("Keybindings")
@@ -179,7 +179,7 @@ impl TGamesManager {
         Ok(())
     }
 
-    fn keybingins_guide() -> String {
+    fn keybindings_guide() -> String {
         String::from(
             "ENTER       - Play\nw or k or  - Go up\ns or j or  - Go down\nESC or q    - Quit\n",
         )
