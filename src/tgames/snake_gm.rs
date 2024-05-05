@@ -102,7 +102,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Self::menu_guide(),
                 "Menu",
                 "Record",
-                "".to_string(),
+                "",
                 Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
@@ -110,7 +110,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Self::play_guide(),
                 "Game board",
                 "Score",
-                "".to_string(),
+                "",
                 Color::Gray,
             )?,
             GameState::Won => self.display_screen(
@@ -118,7 +118,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Self::menu_guide(),
                 "Menu",
                 "Record",
-                "You won, congratulations!!".to_string(),
+                "You won, congratulations!!",
                 Color::Green,
             )?,
             GameState::Lost => self.display_screen(
@@ -126,7 +126,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Self::menu_guide(),
                 "Menu",
                 "Record",
-                "You lost.".to_string(),
+                "You lost.",
                 Color::Red,
             )?,
             GameState::Quitting => (),
@@ -187,7 +187,7 @@ trying to beat your high score with each game!",
         help_message: String,
         title: &str,
         score_title: &str,
-        message: String,
+        message: &str,
         color: Color,
     ) -> Result<()> {
         self.terminal.draw(|frame| {
@@ -201,7 +201,7 @@ trying to beat your high score with each game!",
                 .split(layout[1]);
 
             frame.render_widget(
-                Paragraph::new(self.board.display_board(message, color)).block(
+                Paragraph::new(self.board.display_board(message.to_string(), color)).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title(title)

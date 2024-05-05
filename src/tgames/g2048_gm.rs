@@ -118,7 +118,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 G2048GameManager::menu_guide(),
                 "Menu",
                 "Record",
-                "You Lost.\nPress enter to try again.",
+                "You Lost!",
                 Color::Red,
             )?,
             GameState::Quitting => (),
