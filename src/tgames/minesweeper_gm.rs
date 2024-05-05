@@ -43,6 +43,7 @@ pub struct MinesweeperGameManager<'a> {
     game_state: GameState,
     play_opt: PlayOpt,
     menu_opt: MenuOpt,
+    difficult: Difficult,
     board: Board,
     record: usize,
 }
@@ -144,17 +145,22 @@ impl<'a> MinesweeperGameManager<'a> {
             game_state: GameState::Starting,
             play_opt: PlayOpt::None,
             menu_opt: MenuOpt::None,
+            difficult: Difficult::Medium,
             board: Board::new(),
             record: 0,
         }
     }
 
     fn menu_guide() -> String {
-        String::from("TODO")
+        String::from(
+            "ENTER    - Play last difficult played\ne        - play easy game\nm        - play medium game\nh        - play hard game\nf        - Decrase fps\nF        - Increase fps\n?        - Display game rules\nESC or q - Go to main menu\n",
+        )
     }
 
     fn play_guide() -> String {
-        String::from("TODO")
+        String::from(
+            "ENTER - Reveal square\n! or m - Mark square\nw or k or    - Move up\ns or j or    - Move down\nd or l or    - Move right\na or h or    - Move left\nESC or q      - Go to menu",
+        )
     }
 
     fn display_screen(
@@ -169,11 +175,15 @@ impl<'a> MinesweeperGameManager<'a> {
         self.terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
                 .split(frame.size());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])
+                .constraints([
+                    Constraint::Percentage(15),
+                    Constraint::Percentage(15),
+                    Constraint::Percentage(70),
+                ])
                 .split(layout[1]);
 
             frame.render_widget(
@@ -197,13 +207,23 @@ impl<'a> MinesweeperGameManager<'a> {
             );
 
             frame.render_widget(
+                Paragraph::new(self.board.bombs().to_string()).block(
+                    Block::new()
+                        .borders(Borders::ALL)
+                        .title("Bombs remaining")
+                        .title_alignment(Alignment::Center),
+                ),
+                sub_layout[1],
+            );
+
+            frame.render_widget(
                 Paragraph::new(help_message).block(
                     Block::new()
                         .borders(Borders::ALL)
                         .title("Help")
                         .title_alignment(Alignment::Center),
                 ),
-                sub_layout[1],
+                sub_layout[2],
             );
         })?;
         Ok(())
@@ -275,16 +295,17 @@ exercising your brain!");
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.menu_opt = MenuOpt::Play(Difficult::Medium);
+                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
                     break;
                 }
                 Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
+                    code: KeyCode::Char('e'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.menu_opt = MenuOpt::Play(Difficult::Easy);
+                    self.difficult = Difficult::Easy;
+                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
                     break;
                 }
 
@@ -294,7 +315,8 @@ exercising your brain!");
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.menu_opt = MenuOpt::Play(Difficult::Medium);
+                    self.difficult = Difficult::Medium;
+                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
                     break;
                 }
                 Event::Key(KeyEvent {
@@ -303,7 +325,8 @@ exercising your brain!");
                     kind: KeyEventKind::Press,
                     ..
                 }) => {
-                    self.menu_opt = MenuOpt::Play(Difficult::Hard);
+                    self.difficult = Difficult::Hard;
+                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
                     break;
                 }
                 _ => (),

@@ -266,7 +266,7 @@ impl Board {
                         let char = if amount == 0 {
                             "  ".to_string()
                         } else {
-                            ((amount as u8 + b'0') as char).to_string() + " "
+                            amount.to_string() + " "
                         };
                         spans.push(Span::styled(
                             char,
