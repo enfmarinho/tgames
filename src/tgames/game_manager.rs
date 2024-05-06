@@ -38,3 +38,10 @@ pub enum Directions {
     Left,
     Right,
 }
+
+#[derive(Clone)]
+pub enum Difficult {
+    Easy,
+    Medium,
+    Hard,
+}

@@ -23,6 +23,8 @@ fn main() -> Result<()> {
             game = Games::G2048;
         } else if argv[1] == "flappybird" {
             game = Games::FlappyBird;
+        } else if argv[1] == "minesweeper" {
+            game = Games::Minesweeper;
         } else {
             print_help_message();
             let mut input: String = String::new();
