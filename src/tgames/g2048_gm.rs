@@ -55,7 +55,11 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Helping => game_manager::read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
-            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())

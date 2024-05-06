@@ -1,4 +1,4 @@
-use crossterm::event::{self, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use std::io::Result;
 
 pub trait GameManager {
@@ -26,19 +26,21 @@ pub fn read_key() -> Result<()> {
     Ok(())
 }
 
-pub fn read_confirmation() -> bool {
-    matches!(read(), Ok(input) if !matches!(input, Event::Key(KeyEvent {
-        code: KeyCode::Char('n'),
-        modifiers: KeyModifiers::NONE,
-        kind: KeyEventKind::Press,
-        ..
-    })
-    | Event::Key(KeyEvent {
-        code: KeyCode::Char('N'),
-        modifiers: KeyModifiers::SHIFT,
-        kind: KeyEventKind::Press,
-        ..
-    })))
+pub fn read_confirmation(key: &Event) -> bool {
+    !matches!(
+        key,
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            ..
+        }) | Event::Key(KeyEvent {
+            code: KeyCode::Char('N'),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            ..
+        })
+    )
 }
 
 pub fn confirmation_guide() -> String {
@@ -64,4 +66,12 @@ pub enum Difficult {
     Easy,
     Medium,
     Hard,
+}
+pub fn force_quit(key: &Event) -> bool {
+    *key == Event::Key(KeyEvent {
+        code: KeyCode::Char('c'),
+        modifiers: KeyModifiers::CONTROL,
+        kind: KeyEventKind::Press,
+        state: KeyEventState::all(),
+    })
 }

@@ -58,7 +58,11 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Helping => read_key()?,
-            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
