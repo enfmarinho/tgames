@@ -42,8 +42,9 @@ const NOT_REVEALED: SquarePosition = SquarePosition {
 #[derive(PartialEq, Clone)]
 enum Square {
     Close(usize),
-    Marked(bool),
     Opened(usize),
+    Marked(bool),
+    Uncertain(bool),
     Bomb,
 }
 
@@ -165,13 +166,15 @@ impl Board {
             }
             Square::Marked(correct) => {
                 self.board_info.number_of_bombs += 1;
-                if correct {
-                    *self.get_position() = Square::Bomb;
-                } else {
+                *self.get_position() = Square::Uncertain(correct);
+            }
+            Square::Uncertain(correct) => match correct {
+                true => *self.get_position() = Square::Bomb,
+                false => {
                     *self.get_position() = Square::Close(0);
                     self.update_close_square_counter(self.curr_line, self.curr_column);
                 }
-            }
+            },
             Square::Opened(_) => (),
         }
     }
@@ -207,18 +210,14 @@ impl Board {
     }
 
     pub fn reveal(&mut self) {
-        let revealed = match *self.get_position() {
+        match *self.get_position() {
+            Square::Close(_) => self.reveal_block(self.curr_line, self.curr_column),
             Square::Bomb => {
                 self.revealed_bomb.line = self.curr_line as i32;
                 self.revealed_bomb.column = self.curr_column as i32;
-                true
             }
-            Square::Close(_) => true,
-            Square::Opened(_) | Square::Marked(_) => false,
+            Square::Opened(_) | Square::Marked(_) | Square::Uncertain(_) => (),
         };
-        if revealed {
-            self.reveal_block(self.curr_line, self.curr_column);
-        }
     }
 
     pub fn move_cursor(&mut self, direction: &Directions) {
@@ -298,6 +297,19 @@ impl Board {
                         if self.revealed_bomb == NOT_REVEALED || correct {
                             spans.push(
                                 Span::styled("󰈿 ", Style::default().fg(Color::Red))
+                                    .bg(background_color),
+                            );
+                        } else {
+                            spans.push(
+                                Span::styled("󰛅 ", Style::default().fg(Color::DarkGray))
+                                    .bg(background_color),
+                            );
+                        }
+                    }
+                    Square::Uncertain(correct) => {
+                        if self.revealed_bomb == NOT_REVEALED || correct {
+                            spans.push(
+                                Span::styled("? ", Style::default().fg(Color::LightMagenta))
                                     .bg(background_color),
                             );
                         } else {
