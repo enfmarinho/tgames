@@ -50,6 +50,7 @@ enum Square {
 pub struct Board {
     board: Vec<Square>,
     board_info: BoardInfo,
+    hide_cursor: bool,
     curr_line: usize,
     curr_column: usize,
     revealed_bomb: SquarePosition,
@@ -65,6 +66,7 @@ impl Board {
                 width: 0,
                 number_of_bombs: 0,
             },
+            hide_cursor: false,
             curr_line: 0,
             curr_column: 0,
             revealed_bomb: SquarePosition {
@@ -96,8 +98,9 @@ impl Board {
         self.board_info.number_of_bombs
     }
 
-    pub fn hide_pieces(&mut self) {
+    pub fn clear(&mut self) {
         self.board.fill(Square::Close(0));
+        self.hide_cursor = true;
     }
 
     pub fn reset(&mut self, difficult: &Difficult) {
@@ -134,6 +137,7 @@ impl Board {
             }
         }
         self.score = 0;
+        self.hide_cursor = false;
         self.revealed_bomb = NOT_REVEALED;
         self.reveal_block(self.curr_line, self.curr_column);
     }
@@ -272,11 +276,12 @@ impl Board {
                     ));
                     continue;
                 }
-                let background_color = if line == self.curr_line && column == self.curr_column {
-                    Color::Gray
-                } else {
-                    Color::Reset
-                };
+                let background_color =
+                    if line == self.curr_line && column == self.curr_column && !self.hide_cursor {
+                        Color::Gray
+                    } else {
+                        Color::Reset
+                    };
                 match *self.consult_position(line, column) {
                     Square::Opened(amount) => {
                         let color = match amount {

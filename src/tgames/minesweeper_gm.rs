@@ -94,7 +94,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             },
             GameState::AskingToQuit => match self.confirmed {
                 true => {
-                    self.board.hide_pieces();
+                    self.board.clear();
                     self.game_state = GameState::Menu;
                 }
                 false => {
