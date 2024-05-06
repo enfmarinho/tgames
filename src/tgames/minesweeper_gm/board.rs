@@ -96,6 +96,10 @@ impl Board {
         self.board_info.number_of_bombs
     }
 
+    pub fn hide_pieces(&mut self) {
+        self.board.fill(Square::Close(0));
+    }
+
     pub fn reset(&mut self, difficult: &Difficult) {
         match difficult {
             Difficult::Easy => self.board_info = EASY_BOARD_INFO,

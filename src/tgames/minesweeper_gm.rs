@@ -27,6 +27,7 @@ enum GameState {
     Helping,
     Won,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -41,8 +42,9 @@ enum PlayOpt {
 pub struct MinesweeperGameManager<'a> {
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     game_state: GameState,
-    play_opt: PlayOpt,
     menu_opt: MenuOpt,
+    play_opt: PlayOpt,
+    confirmed: bool,
     difficult: Difficult,
     board: Board,
     record: usize,
@@ -55,6 +57,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Helping => read_key()?,
+            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
             GameState::Quitting => (),
         }
         Ok(())
@@ -86,8 +89,17 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 }
                 PlayOpt::Mark => self.board.mark(),
                 PlayOpt::Direction(direction) => self.board.move_cursor(direction),
-                PlayOpt::Quit => self.game_state = GameState::Menu,
+                PlayOpt::Quit => self.game_state = GameState::AskingToQuit,
                 PlayOpt::None => (),
+            },
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.hide_pieces();
+                    self.game_state = GameState::Menu;
+                }
+                false => {
+                    self.game_state = GameState::Playing;
+                }
             },
             GameState::Quitting => {}
         }
@@ -129,6 +141,14 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 "You lost, try again!",
                 Color::Red,
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -143,8 +163,9 @@ impl<'a> MinesweeperGameManager<'a> {
         Self {
             terminal,
             game_state: GameState::Starting,
-            play_opt: PlayOpt::None,
             menu_opt: MenuOpt::None,
+            play_opt: PlayOpt::None,
+            confirmed: false,
             difficult: Difficult::Medium,
             board: Board::new(),
             record: 0,
