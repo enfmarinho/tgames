@@ -76,7 +76,9 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             GameState::Helping => self.game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    self.board.reset_board();
+                    if let GameState::Lost = self.game_state {
+                        self.board.reset_board();
+                    }
                     self.game_state = GameState::Playing;
                 }
                 MenuOpt::Help => {
@@ -129,6 +131,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             GameState::AskingToQuit => match self.confirmed {
                 true => {
                     self.game_state = GameState::Menu;
+                    self.board.reset_board();
                 }
                 false => self.game_state = GameState::Playing,
             },
