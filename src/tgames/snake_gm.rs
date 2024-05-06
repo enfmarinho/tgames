@@ -1,6 +1,6 @@
 mod board;
 
-use super::game_manager::{self, Confirmation, Directions};
+use super::game_manager::{self, Directions};
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -42,7 +42,7 @@ pub struct SnakeGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     direction: Directions,
-    confirmation: Confirmation,
+    confirmed: bool,
     board: Board,
     record: u32,
     fps: u64,
@@ -54,7 +54,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Helping => game_manager::read_key()?,
             GameState::Playing => self.read_play_input()?,
-            GameState::AskingToQuit => self.read_confirmation()?,
+            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
             GameState::Quitting => (),
         }
         Ok(())
@@ -91,12 +91,12 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                     self.menu_opt = MenuOpt::None;
                 }
             }
-            GameState::AskingToQuit => match self.confirmation {
-                Confirmation::Yes => {
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
                     self.board.reset_board();
                     self.game_state = GameState::Menu;
                 }
-                Confirmation::No => self.game_state = GameState::Playing,
+                false => self.game_state = GameState::Playing,
             },
             GameState::Quitting => (),
         }
@@ -141,7 +141,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             )?,
             GameState::AskingToQuit => self.display_screen(
                 self.board.consult_score(),
-                Self::confirmation_guide(),
+                game_manager::confirmation_guide(),
                 "Quitting",
                 "Score",
                 "Are you sure you want to quit?",
@@ -167,7 +167,7 @@ impl<'a> SnakeGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             direction: Directions::Right,
-            confirmation: Confirmation::No,
+            confirmed: false,
             board: Board::new(12, 20),
             record: 0,
             fps: 15,
@@ -263,10 +263,6 @@ trying to beat your high score with each game!",
         )
     }
 
-    fn confirmation_guide() -> String {
-        String::from("N or n - go back to playing\nAny key - confirm")
-    }
-
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
@@ -330,25 +326,6 @@ trying to beat your high score with each game!",
                 }
                 _ => (),
             }
-        }
-        Ok(())
-    }
-
-    fn read_confirmation(&mut self) -> Result<()> {
-        match read()? {
-            Event::Key(KeyEvent {
-                code: KeyCode::Char('n'),
-                modifiers: KeyModifiers::NONE,
-                kind: KeyEventKind::Press,
-                ..
-            })
-            | Event::Key(KeyEvent {
-                code: KeyCode::Char('N'),
-                modifiers: KeyModifiers::SHIFT,
-                kind: KeyEventKind::Press,
-                ..
-            }) => self.confirmation = Confirmation::No,
-            _ => self.confirmation = Confirmation::Yes,
         }
         Ok(())
     }
