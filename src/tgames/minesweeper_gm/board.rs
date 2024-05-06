@@ -113,7 +113,7 @@ impl Board {
         }
         for line in 0..self.board_info.height {
             for column in 0..self.board_info.width {
-                self.update_square_counter(line, column);
+                self.update_close_square_counter(line, column);
             }
         }
         self.curr_line = thread_rng().gen_range(0..self.board_info.height);
@@ -134,25 +134,23 @@ impl Board {
         self.reveal_block(self.curr_line, self.curr_column);
     }
 
-    fn update_square_counter(&mut self, line: usize, column: usize) {
-        match self.consult_position(line, column) {
-            Square::Opened(_) | Square::Bomb => return,
-            Square::Close(_) | Square::Marked(_) => (),
-        }
-        let mut counter = 0;
-        for line_offset in -1..2 {
-            for column_offset in -1..2 {
-                let consult_line = line as i32 + line_offset;
-                let consult_column = column as i32 + column_offset;
-                if self.in_bounds(consult_line, consult_column)
-                    && *self.consult_position(consult_line as usize, consult_column as usize)
-                        == Square::Bomb
-                {
-                    counter += 1;
+    fn update_close_square_counter(&mut self, line: usize, column: usize) {
+        if let Square::Close(_) = *self.consult_position(line, column) {
+            let mut counter = 0;
+            for line_offset in -1..2 {
+                for column_offset in -1..2 {
+                    let consult_line = line as i32 + line_offset;
+                    let consult_column = column as i32 + column_offset;
+                    if self.in_bounds(consult_line, consult_column)
+                        && *self.consult_position(consult_line as usize, consult_column as usize)
+                            == Square::Bomb
+                    {
+                        counter += 1;
+                    }
                 }
             }
+            self.board[line * self.board_info.width + column] = Square::Close(counter);
         }
-        self.board[line * self.board_info.width + column] = Square::Close(counter);
     }
 
     pub fn mark(&mut self) {
@@ -170,7 +168,8 @@ impl Board {
                 if correct {
                     *self.get_position() = Square::Bomb;
                 } else {
-                    self.update_square_counter(self.curr_line, self.curr_column);
+                    *self.get_position() = Square::Close(0);
+                    self.update_close_square_counter(self.curr_line, self.curr_column);
                 }
             }
             Square::Opened(_) => (),
@@ -188,7 +187,16 @@ impl Board {
         if amount != 0 {
             return;
         }
-        let offsets = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+        let offsets = [
+            (0, 1),
+            (0, -1),
+            (1, 0),
+            (-1, 0),
+            (1, 1),
+            (1, -1),
+            (-1, 1),
+            (-1, -1),
+        ];
         for (vertical_offset, horizontal_offset) in offsets {
             let line = line as i32 + vertical_offset;
             let column = column as i32 + horizontal_offset;
@@ -273,7 +281,8 @@ impl Board {
                             3 => Color::LightRed,
                             4 => Color::Blue,
                             5 => Color::Red,
-                            _ => Color::Black,
+                            6 => Color::Yellow,
+                            _ => Color::Magenta,
                         };
                         let char = if amount == 0 {
                             "  ".to_string()
