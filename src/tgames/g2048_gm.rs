@@ -32,6 +32,7 @@ enum GameState {
     Playing,
     Helping,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -40,6 +41,7 @@ pub struct G2048GameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opts: PlayOpt,
+    confirmed: bool,
     record: u32,
     board: Board,
 }
@@ -51,6 +53,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Helping => game_manager::read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
+            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
             GameState::Quitting => (),
         }
         Ok(())
@@ -76,8 +79,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 match &self.play_opts {
                     PlayOpt::Direction(direction) => self.board.move_pieces(direction),
                     PlayOpt::Quit => {
-                        self.game_state = GameState::Menu;
-                        self.board.reset_board();
+                        self.game_state = GameState::AskingToQuit;
                     }
                     PlayOpt::None => (),
                 }
@@ -88,6 +90,13 @@ impl<'a> GameManager for G2048GameManager<'a> {
                     self.record = self.board.consult_score();
                 }
             }
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.reset_board();
+                    self.game_state = GameState::Menu;
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -121,6 +130,14 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 "You Lost!",
                 Color::Red,
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -137,6 +154,7 @@ impl<'a> G2048GameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opts: PlayOpt::None,
+            confirmed: false,
             record: 0,
             board: Board::new(),
         }
