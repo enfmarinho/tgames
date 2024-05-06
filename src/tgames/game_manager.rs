@@ -45,3 +45,8 @@ pub enum Difficult {
     Medium,
     Hard,
 }
+
+pub enum Confirmation {
+    Yes,
+    No,
+}
