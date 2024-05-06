@@ -34,6 +34,7 @@ enum MenuOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -54,6 +55,7 @@ pub struct FlappyBirdGameManager<'a> {
     board: Board,
     record: u32,
     fps: u64,
+    kill_execution: bool,
 }
 
 impl<'a> GameManager for FlappyBirdGameManager<'a> {
@@ -64,13 +66,15 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             GameState::Playing => self.read_play_input()?,
             GameState::Helping | GameState::Pause => game_manager::read_key()?,
             GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
-
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Menu | GameState::Lost => match self.menu_opt {
@@ -163,6 +167,10 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
         Ok(())
     }
 
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
         matches!(self.game_state, GameState::Quitting)
     }
@@ -183,6 +191,7 @@ impl<'a> FlappyBirdGameManager<'a> {
             board: Board::new(),
             record: 0,
             fps: FPS_CHANGE * 2,
+            kill_execution: false,
         }
     }
 
@@ -336,6 +345,15 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
                     self.menu_opt = MenuOpt::DecreaseFPS;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -386,9 +404,13 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.play_opt = PlayOpt::Quit;
-                }
+                }) => self.play_opt = PlayOpt::Quit,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.kill_execution = true,
                 _ => (),
             }
         } else {
@@ -396,9 +418,11 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
         }
         Ok(())
     }
+
     fn increase_fps(&mut self) {
         self.fps += FPS_CHANGE;
     }
+
     fn decrease_fps(&mut self) {
         self.fps -= FPS_CHANGE;
         if self.fps < FPS_CHANGE {

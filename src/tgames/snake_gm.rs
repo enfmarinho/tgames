@@ -26,6 +26,7 @@ enum MenuOpt {
     DecreaseFPS,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -46,6 +47,7 @@ pub struct SnakeGameManager<'a> {
     board: Board,
     record: u32,
     fps: u64,
+    kill_execution: bool,
 }
 impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
@@ -61,6 +63,9 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -152,8 +157,12 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
         Ok(())
     }
 
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
-        matches!(self.game_state, GameState::Quitting)
+        self.game_state == GameState::Quitting
     }
 
     fn limit_fps(&self) {
@@ -171,6 +180,7 @@ impl<'a> SnakeGameManager<'a> {
             board: Board::new(12, 20),
             record: 0,
             fps: 15,
+            kill_execution: false,
         }
     }
 
@@ -324,6 +334,15 @@ trying to beat your high score with each game!",
                     self.menu_opt = MenuOpt::DecreaseFPS;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -416,9 +435,13 @@ trying to beat your high score with each game!",
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                }
+                }) => self.menu_opt = MenuOpt::Quit,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.kill_execution = true,
                 _ => (),
             }
         }

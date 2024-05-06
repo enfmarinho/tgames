@@ -19,7 +19,7 @@ enum MenuOpt {
     None,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -48,6 +48,7 @@ pub struct MinesweeperGameManager<'a> {
     difficult: Difficult,
     board: Board,
     record: usize,
+    kill_execution: bool,
 }
 
 impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
@@ -63,6 +64,9 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         Ok(())
     }
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -101,7 +105,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                     self.game_state = GameState::Playing;
                 }
             },
-            GameState::Quitting => {}
+            GameState::Quitting => (),
         }
         Ok(())
     }
@@ -153,6 +157,11 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         }
         Ok(())
     }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
         self.game_state == GameState::Quitting
     }
@@ -169,6 +178,7 @@ impl<'a> MinesweeperGameManager<'a> {
             difficult: Difficult::Medium,
             board: Board::new(),
             record: 0,
+            kill_execution: false,
         }
     }
 
@@ -350,6 +360,15 @@ exercising your brain!");
                     self.menu_opt = MenuOpt::Play(self.difficult.clone());
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -486,6 +505,15 @@ exercising your brain!");
                     ..
                 }) => {
                     self.play_opt = PlayOpt::Quit;
+                    break;
+                }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
                     break;
                 }
                 _ => (),

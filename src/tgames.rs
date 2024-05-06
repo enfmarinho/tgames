@@ -68,6 +68,7 @@ struct TGamesManager {
     execution_state: TGamesState,
     main_menu_opts: MainMenuOpts,
     game_index: usize,
+    kill_execution: bool,
 }
 
 impl TGamesManager {
@@ -77,6 +78,7 @@ impl TGamesManager {
             execution_state: TGamesState::Starting,
             main_menu_opts: MainMenuOpts::None,
             game_index: 0,
+            kill_execution: false,
         }
     }
 
@@ -89,6 +91,9 @@ impl TGamesManager {
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.execution_state = TGamesState::Quitting;
+        }
         match self.execution_state {
             TGamesState::Starting => self.execution_state = TGamesState::MainMenu,
             TGamesState::MainMenu => match self.main_menu_opts {
@@ -295,6 +300,15 @@ considering giving a start on github!",
                     self.main_menu_opts = MainMenuOpts::Down;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    kind: KeyEventKind::Press,
+                    modifiers: KeyModifiers::CONTROL,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -310,13 +324,15 @@ considering giving a start on github!",
     }
 
     fn run_game(&mut self, game: Games) -> Result<()> {
-        match game {
-            Games::Snake => SnakeGameManager::new(&mut self.terminal).run()?,
-            Games::Tetris => TetrisGameManager::new(&mut self.terminal).run()?,
-            Games::Minesweeper => MinesweeperGameManager::new(&mut self.terminal).run()?,
-            Games::FlappyBird => FlappyBirdGameManager::new(&mut self.terminal).run()?,
-            Games::G2048 => G2048GameManager::new(&mut self.terminal).run()?,
-            Games::None => (),
+        if let Ok(true) = match game {
+            Games::Snake => SnakeGameManager::new(&mut self.terminal).run(),
+            Games::Tetris => TetrisGameManager::new(&mut self.terminal).run(),
+            Games::Minesweeper => MinesweeperGameManager::new(&mut self.terminal).run(),
+            Games::FlappyBird => FlappyBirdGameManager::new(&mut self.terminal).run(),
+            Games::G2048 => G2048GameManager::new(&mut self.terminal).run(),
+            Games::None => Ok(false),
+        } {
+            self.kill_execution = true;
         }
         Ok(())
     }

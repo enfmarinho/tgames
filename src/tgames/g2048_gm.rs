@@ -26,6 +26,7 @@ enum MenuOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -44,6 +45,7 @@ pub struct G2048GameManager<'a> {
     confirmed: bool,
     record: u32,
     board: Board,
+    kill_execution: bool,
 }
 
 impl<'a> GameManager for G2048GameManager<'a> {
@@ -60,6 +62,9 @@ impl<'a> GameManager for G2048GameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -142,6 +147,11 @@ impl<'a> GameManager for G2048GameManager<'a> {
         }
         Ok(())
     }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
         matches!(self.game_state, GameState::Quitting)
     }
@@ -157,6 +167,7 @@ impl<'a> G2048GameManager<'a> {
             confirmed: false,
             record: 0,
             board: Board::new(),
+            kill_execution: false,
         }
     }
 
@@ -310,6 +321,15 @@ elusive number for hours on end. Enjoy the challenge!",
                     self.menu_opt = MenuOpt::Play;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -416,6 +436,15 @@ elusive number for hours on end. Enjoy the challenge!",
                     ..
                 }) => {
                     self.play_opts = PlayOpt::Quit;
+                    break;
+                }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
                     break;
                 }
                 _ => (),

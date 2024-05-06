@@ -34,6 +34,7 @@ enum PlayOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Helping,
@@ -55,6 +56,7 @@ pub struct TetrisGameManager<'a> {
     counter: usize,
     score_record: u32,
     line_record: u32,
+    kill_execution: bool,
 }
 impl<'a> GameManager for TetrisGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
@@ -71,6 +73,9 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -189,8 +194,12 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         Ok(())
     }
 
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
-        matches!(self.game_state, GameState::Quitting)
+        self.game_state == GameState::Quitting
     }
 }
 
@@ -206,6 +215,7 @@ impl<'a> TetrisGameManager<'a> {
             counter: 0,
             score_record: 0,
             line_record: 0,
+            kill_execution: false,
         }
     }
 
@@ -376,6 +386,15 @@ playground clear. It's easy to learn, but oh-so-addictive once you get going!",
                     self.menu_opt = MenuOpt::Play;
                     break;
                 }
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => {
+                    self.kill_execution = true;
+                    break;
+                }
                 _ => (),
             }
         }
@@ -480,9 +499,13 @@ playground clear. It's easy to learn, but oh-so-addictive once you get going!",
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.play_opt = PlayOpt::Quit;
-                }
+                }) => self.play_opt = PlayOpt::Quit,
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('c'),
+                    modifiers: KeyModifiers::CONTROL,
+                    kind: KeyEventKind::Press,
+                    ..
+                }) => self.kill_execution = true,
                 _ => (),
             }
         } else {
