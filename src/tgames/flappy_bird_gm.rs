@@ -41,6 +41,7 @@ enum GameState {
     Helping,
     Pause,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -49,6 +50,7 @@ pub struct FlappyBirdGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
+    confirmed: bool,
     board: Board,
     record: u32,
     fps: u64,
@@ -61,6 +63,8 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Helping | GameState::Pause => game_manager::read_key()?,
+            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
+
             GameState::Quitting => (),
         }
         Ok(())
@@ -87,7 +91,7 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                     PlayOpt::None => self.board.advance(false),
                     PlayOpt::Jump => self.board.advance(true),
                     PlayOpt::Pause => self.game_state = GameState::Pause,
-                    PlayOpt::Quit => self.game_state = GameState::Menu,
+                    PlayOpt::Quit => self.game_state = GameState::AskingToQuit,
                 }
                 if self.board.lost() {
                     self.game_state = GameState::Lost;
@@ -98,6 +102,13 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             }
             GameState::Helping => self.game_state = GameState::Menu,
             GameState::Pause => self.game_state = GameState::Playing,
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.reset_board();
+                    self.game_state = GameState::Menu;
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -139,6 +150,14 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                 "Game is paused.",
                 Color::default(),
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -160,6 +179,7 @@ impl<'a> FlappyBirdGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
+            confirmed: false,
             board: Board::new(),
             record: 0,
             fps: FPS_CHANGE * 2,
