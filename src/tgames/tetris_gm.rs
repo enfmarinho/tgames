@@ -41,6 +41,7 @@ enum GameState {
     Playing,
     Pause,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -49,6 +50,7 @@ pub struct TetrisGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
+    confirmed: bool,
     board: Board,
     counter: usize,
     score_record: u32,
@@ -62,6 +64,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Pause => game_manager::read_key()?,
+            GameState::AskingToQuit => self.confirmed = game_manager::read_confirmation(),
             GameState::Quitting => (),
         }
         Ok(())
@@ -112,27 +115,23 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                         self.counter = 0;
                     }
                     PlayOpt::Quit => {
-                        self.game_state = GameState::Menu;
-                        if self.board.consult_score() > self.score_record {
-                            self.score_record = self.board.consult_score();
-                        }
-                        if self.board.consult_lines_completed() > self.line_record {
-                            self.line_record = self.board.consult_lines_completed();
-                        }
+                        self.game_state = GameState::AskingToQuit;
+                        self.update_record();
                     }
                     PlayOpt::None => (),
                 }
                 if self.board.defeated() {
                     self.game_state = GameState::Lost;
-                    if self.board.consult_score() > self.score_record {
-                        self.score_record = self.board.consult_score();
-                    }
-                    if self.board.consult_lines_completed() > self.line_record {
-                        self.line_record = self.board.consult_lines_completed();
-                    }
+                    self.update_record();
                 }
             }
             GameState::Pause => self.game_state = GameState::Playing,
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.game_state = GameState::Menu;
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -174,6 +173,14 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "Record",
                 "You lost! Press enter to try again.",
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                self.board.consult_lines_completed(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
@@ -191,6 +198,7 @@ impl<'a> TetrisGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
+            confirmed: false,
             board: Board::new(),
             counter: 0,
             score_record: 0,
@@ -208,6 +216,15 @@ impl<'a> TetrisGameManager<'a> {
         String::from(
             "d or l or  - Move piece to the right\na or h or  - Move piece to the left\nw or k or  - Rotate piece\ns or j or  - Soft drop\nSPACE       - Hard drop\np           - Pause game\nESC or q    - Go back to menu\n ",
         )
+    }
+
+    fn update_record(&mut self) {
+        if self.board.consult_score() > self.score_record {
+            self.score_record = self.board.consult_score();
+        }
+        if self.board.consult_lines_completed() > self.line_record {
+            self.line_record = self.board.consult_lines_completed();
+        }
     }
 
     fn display_screen(
