@@ -2,8 +2,11 @@ mod board;
 
 use self::board::Board;
 
-use super::game_manager::{self, Directions, GameManager};
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use super::game_manager::{
+    self, should_force_quit, should_help, should_move_down, should_move_left, should_move_right,
+    should_move_up, should_play, should_quit, Directions, GameManager,
+};
+use crossterm::event::read;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -26,12 +29,14 @@ enum MenuOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
     Playing,
     Helping,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -40,8 +45,10 @@ pub struct G2048GameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opts: PlayOpt,
+    confirmed: bool,
     record: u32,
     board: Board,
+    kill_execution: bool,
 }
 
 impl<'a> GameManager for G2048GameManager<'a> {
@@ -51,12 +58,20 @@ impl<'a> GameManager for G2048GameManager<'a> {
             GameState::Helping => game_manager::read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::should_force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -76,8 +91,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 match &self.play_opts {
                     PlayOpt::Direction(direction) => self.board.move_pieces(direction),
                     PlayOpt::Quit => {
-                        self.game_state = GameState::Menu;
-                        self.board.reset_board();
+                        self.game_state = GameState::AskingToQuit;
                     }
                     PlayOpt::None => (),
                 }
@@ -88,6 +102,13 @@ impl<'a> GameManager for G2048GameManager<'a> {
                     self.record = self.board.consult_score();
                 }
             }
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.reset_board();
+                    self.game_state = GameState::Menu;
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -121,10 +142,23 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 "You Lost!",
                 Color::Red,
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
     }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
         matches!(self.game_state, GameState::Quitting)
     }
@@ -137,8 +171,10 @@ impl<'a> G2048GameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opts: PlayOpt::None,
+            confirmed: false,
             record: 0,
             board: Board::new(),
+            kill_execution: false,
         }
     }
 
@@ -252,47 +288,19 @@ elusive number for hours on end. Enjoy the challenge!",
 
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play;
-                    break;
-                }
-                _ => (),
+            let event = read()?;
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
             }
         }
         Ok(())
@@ -300,107 +308,25 @@ elusive number for hours on end. Enjoy the challenge!",
 
     fn read_play_input(&mut self) -> Result<()> {
         loop {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('h'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('a'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Left,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opts = PlayOpt::Direction(Directions::Left);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('l'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('d'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Right,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opts = PlayOpt::Direction(Directions::Right);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('s'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opts = PlayOpt::Direction(Directions::Down);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opts = PlayOpt::Direction(Directions::Up);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opts = PlayOpt::Quit;
-                    break;
-                }
-                _ => (),
+            let event = read()?;
+            if should_move_up(&event) {
+                self.play_opts = PlayOpt::Direction(Directions::Up);
+                break;
+            } else if should_move_down(&event) {
+                self.play_opts = PlayOpt::Direction(Directions::Down);
+                break;
+            } else if should_move_left(&event) {
+                self.play_opts = PlayOpt::Direction(Directions::Left);
+                break;
+            } else if should_move_right(&event) {
+                self.play_opts = PlayOpt::Direction(Directions::Right);
+                break;
+            } else if should_quit(&event) {
+                self.play_opts = PlayOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
             }
         }
         Ok(())

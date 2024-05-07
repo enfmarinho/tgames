@@ -1,6 +1,9 @@
 mod board;
 
-use super::game_manager::{self, GameManager};
+use super::game_manager::{
+    self, should_force_quit, should_help, should_move_up, should_pause, should_play, should_quit,
+    GameManager,
+};
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -34,6 +37,7 @@ enum MenuOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -41,6 +45,7 @@ enum GameState {
     Helping,
     Pause,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -49,9 +54,11 @@ pub struct FlappyBirdGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
+    confirmed: bool,
     board: Board,
     record: u32,
     fps: u64,
+    kill_execution: bool,
 }
 
 impl<'a> GameManager for FlappyBirdGameManager<'a> {
@@ -61,12 +68,20 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Helping | GameState::Pause => game_manager::read_key()?,
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::should_force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Menu | GameState::Lost => match self.menu_opt {
@@ -87,7 +102,7 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                     PlayOpt::None => self.board.advance(false),
                     PlayOpt::Jump => self.board.advance(true),
                     PlayOpt::Pause => self.game_state = GameState::Pause,
-                    PlayOpt::Quit => self.game_state = GameState::Menu,
+                    PlayOpt::Quit => self.game_state = GameState::AskingToQuit,
                 }
                 if self.board.lost() {
                     self.game_state = GameState::Lost;
@@ -98,6 +113,13 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             }
             GameState::Helping => self.game_state = GameState::Menu,
             GameState::Pause => self.game_state = GameState::Playing,
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.reset_board();
+                    self.game_state = GameState::Menu;
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -139,9 +161,21 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
                 "Game is paused.",
                 Color::default(),
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
+    }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
     }
 
     fn ended(&self) -> bool {
@@ -160,9 +194,11 @@ impl<'a> FlappyBirdGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
+            confirmed: false,
             board: Board::new(),
             record: 0,
             fps: FPS_CHANGE * 2,
+            kill_execution: false,
         }
     }
 
@@ -258,65 +294,24 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('F'),
-                    modifiers: KeyModifiers::SHIFT,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::IncreaseFPS;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('f'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::DecreaseFPS;
-                    break;
-                }
-                _ => (),
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play;
+                break;
+            } else if game_manager::should_increase_fps(&event) {
+                self.menu_opt = MenuOpt::IncreaseFPS;
+                break;
+            } else if game_manager::should_decrease_fps(&event) {
+                self.menu_opt = MenuOpt::DecreaseFPS;
+                break;
             }
         }
         Ok(())
@@ -324,61 +319,36 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
 
     fn read_play_input(&mut self) -> Result<()> {
         if poll(Duration::from_millis(50))? {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char(' '),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Jump,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Pause,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Quit;
-                }
-                _ => (),
+            let event = read()?;
+            if should_move_up(&event)
+                || matches!(
+                    event,
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char(' '),
+                        modifiers: KeyModifiers::NONE,
+                        kind: KeyEventKind::Press,
+                        ..
+                    })
+                )
+            {
+                self.play_opt = PlayOpt::Jump;
+            } else if should_pause(&event) {
+                self.play_opt = PlayOpt::Pause;
+            } else if should_quit(&event) {
+                self.play_opt = PlayOpt::Quit;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
             }
         } else {
             self.play_opt = PlayOpt::None;
         }
         Ok(())
     }
+
     fn increase_fps(&mut self) {
         self.fps += FPS_CHANGE;
     }
+
     fn decrease_fps(&mut self) {
         self.fps -= FPS_CHANGE;
         if self.fps < FPS_CHANGE {

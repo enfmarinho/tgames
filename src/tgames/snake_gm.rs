@@ -1,8 +1,12 @@
 mod board;
 
-use super::game_manager::{self, Directions};
+use super::game_manager::{
+    self, should_decrease_fps, should_force_quit, should_help, should_increase_fps,
+    should_move_down, should_move_left, should_move_right, should_move_up, should_play,
+    should_quit, Directions,
+};
 use board::Board;
-use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{poll, read};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -26,6 +30,7 @@ enum MenuOpt {
     DecreaseFPS,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -33,6 +38,7 @@ enum GameState {
     Helping,
     Won,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -41,9 +47,11 @@ pub struct SnakeGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     direction: Directions,
+    confirmed: bool,
     board: Board,
     record: u32,
     fps: u64,
+    kill_execution: bool,
 }
 impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
@@ -52,12 +60,20 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Helping => game_manager::read_key()?,
             GameState::Playing => self.read_play_input()?,
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::should_force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -84,10 +100,17 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                     self.record = self.board.consult_score();
                 }
                 if matches!(self.menu_opt, MenuOpt::Quit) {
+                    self.game_state = GameState::AskingToQuit;
+                    self.menu_opt = MenuOpt::None;
+                }
+            }
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
                     self.board.reset_board();
                     self.game_state = GameState::Menu;
                 }
-            }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -129,13 +152,25 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 "You lost.",
                 Color::Red,
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
     }
 
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
-        matches!(self.game_state, GameState::Quitting)
+        self.game_state == GameState::Quitting
     }
 
     fn limit_fps(&self) {
@@ -149,9 +184,11 @@ impl<'a> SnakeGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             direction: Directions::Right,
+            confirmed: false,
             board: Board::new(12, 20),
             record: 0,
             fps: 15,
+            kill_execution: false,
         }
     }
 
@@ -247,65 +284,24 @@ trying to beat your high score with each game!",
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('F'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::SHIFT,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::IncreaseFPS;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('f'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::DecreaseFPS;
-                    break;
-                }
-                _ => (),
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
+            } else if should_increase_fps(&event) {
+                self.menu_opt = MenuOpt::IncreaseFPS;
+                break;
+            } else if should_decrease_fps(&event) {
+                self.menu_opt = MenuOpt::DecreaseFPS;
+                break;
             }
         }
         Ok(())
@@ -313,94 +309,19 @@ trying to beat your high score with each game!",
 
     fn read_play_input(&mut self) -> Result<()> {
         if poll(Duration::from_millis(100))? {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('h'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('a'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Left,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.direction = Directions::Left,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('l'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('d'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Right,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.direction = Directions::Right,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('s'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.direction = Directions::Down,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.direction = Directions::Up,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                }
-                _ => (),
+            let event = read()?;
+            if should_move_up(&event) {
+                self.direction = Directions::Up;
+            } else if should_move_down(&event) {
+                self.direction = Directions::Down;
+            } else if should_move_left(&event) {
+                self.direction = Directions::Left;
+            } else if should_move_right(&event) {
+                self.direction = Directions::Right;
+            } else if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
             }
         }
         Ok(())

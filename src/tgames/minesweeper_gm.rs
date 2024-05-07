@@ -1,6 +1,9 @@
 mod board;
 
-use super::game_manager::{self, read_key, Difficult, Directions};
+use super::game_manager::{
+    self, read_key, should_force_quit, should_help, should_move_down, should_move_left,
+    should_move_right, should_move_up, should_play, should_quit, Difficult, Directions,
+};
 use board::Board;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -19,7 +22,7 @@ enum MenuOpt {
     None,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Menu,
@@ -27,6 +30,7 @@ enum GameState {
     Helping,
     Won,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -41,11 +45,13 @@ enum PlayOpt {
 pub struct MinesweeperGameManager<'a> {
     terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
     game_state: GameState,
-    play_opt: PlayOpt,
     menu_opt: MenuOpt,
+    play_opt: PlayOpt,
+    confirmed: bool,
     difficult: Difficult,
     board: Board,
     record: usize,
+    kill_execution: bool,
 }
 
 impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
@@ -55,11 +61,19 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Helping => read_key()?,
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::should_force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
     }
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
@@ -86,10 +100,19 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 }
                 PlayOpt::Mark => self.board.mark(),
                 PlayOpt::Direction(direction) => self.board.move_cursor(direction),
-                PlayOpt::Quit => self.game_state = GameState::Menu,
+                PlayOpt::Quit => self.game_state = GameState::AskingToQuit,
                 PlayOpt::None => (),
             },
-            GameState::Quitting => {}
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.board.clear();
+                    self.game_state = GameState::Menu;
+                }
+                false => {
+                    self.game_state = GameState::Playing;
+                }
+            },
+            GameState::Quitting => (),
         }
         Ok(())
     }
@@ -129,10 +152,23 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 "You lost, try again!",
                 Color::Red,
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.score(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+                Color::Yellow,
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
     }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
         self.game_state == GameState::Quitting
     }
@@ -143,11 +179,13 @@ impl<'a> MinesweeperGameManager<'a> {
         Self {
             terminal,
             game_state: GameState::Starting,
-            play_opt: PlayOpt::None,
             menu_opt: MenuOpt::None,
+            play_opt: PlayOpt::None,
+            confirmed: false,
             difficult: Difficult::Medium,
             board: Board::new(),
             record: 0,
+            kill_execution: false,
         }
     }
 
@@ -264,72 +302,54 @@ exercising your brain!");
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
-                    break;
-                }
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play(self.difficult.clone());
+                break;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('e'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.difficult = Difficult::Easy;
-                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
-                    break;
-                }
-
+                })
+            ) {
+                self.difficult = Difficult::Easy;
+                self.menu_opt = MenuOpt::Play(self.difficult.clone());
+                break;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('m'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.difficult = Difficult::Medium;
-                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
-                    break;
-                }
+                })
+            ) {
+                self.difficult = Difficult::Medium;
+                self.menu_opt = MenuOpt::Play(self.difficult.clone());
+                break;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('h'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.difficult = Difficult::Hard;
-                    self.menu_opt = MenuOpt::Play(self.difficult.clone());
-                    break;
-                }
-                _ => (),
+                })
+            ) {
+                self.difficult = Difficult::Hard;
+                self.menu_opt = MenuOpt::Play(self.difficult.clone());
+                break;
             }
         }
         Ok(())
@@ -337,137 +357,57 @@ exercising your brain!");
 
     fn read_play_input(&mut self) -> Result<()> {
         loop {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('h'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('a'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Left,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Direction(Directions::Left);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('l'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('d'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Right,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Direction(Directions::Right);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('s'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Direction(Directions::Down);
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Direction(Directions::Up);
-                    break;
-                }
+            let event = read()?;
+            if should_move_up(&event) {
+                self.play_opt = PlayOpt::Direction(Directions::Up);
+                break;
+            } else if should_move_down(&event) {
+                self.play_opt = PlayOpt::Direction(Directions::Down);
+                break;
+            } else if should_move_left(&event) {
+                self.play_opt = PlayOpt::Direction(Directions::Left);
+                break;
+            } else if should_move_right(&event) {
+                self.play_opt = PlayOpt::Direction(Directions::Right);
+                break;
+            } else if should_quit(&event) {
+                self.play_opt = PlayOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('m'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                })
-                | Event::Key(KeyEvent {
+                }) | Event::Key(KeyEvent {
                     code: KeyCode::Char('!'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.play_opt = PlayOpt::Mark;
-                    break;
-                }
+                })
+            ) {
+                self.play_opt = PlayOpt::Mark;
+                break;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Enter,
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                })
-                | Event::Key(KeyEvent {
+                }) | Event::Key(KeyEvent {
                     code: KeyCode::Char('r'),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => {
-                    self.play_opt = PlayOpt::Reveal;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
                 })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Quit;
-                    break;
-                }
-                _ => (),
+            ) {
+                self.play_opt = PlayOpt::Reveal;
+                break;
             }
         }
         Ok(())

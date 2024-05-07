@@ -1,7 +1,10 @@
 mod board;
 mod bricks;
 
-use super::game_manager::{self, GameManager};
+use super::game_manager::{
+    self, should_force_quit, should_help, should_move_down, should_move_left, should_move_right,
+    should_move_up, should_pause, should_play, should_quit, GameManager,
+};
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -34,6 +37,7 @@ enum PlayOpt {
     None,
 }
 
+#[derive(PartialEq, Eq)]
 enum GameState {
     Starting,
     Helping,
@@ -41,6 +45,7 @@ enum GameState {
     Playing,
     Pause,
     Lost,
+    AskingToQuit,
     Quitting,
 }
 
@@ -49,10 +54,12 @@ pub struct TetrisGameManager<'a> {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
+    confirmed: bool,
     board: Board,
     counter: usize,
     score_record: u32,
     line_record: u32,
+    kill_execution: bool,
 }
 impl<'a> GameManager for TetrisGameManager<'a> {
     fn process_events(&mut self) -> Result<()> {
@@ -62,18 +69,28 @@ impl<'a> GameManager for TetrisGameManager<'a> {
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::Pause => game_manager::read_key()?,
+            GameState::AskingToQuit => {
+                let event = read()?;
+                self.kill_execution = game_manager::should_force_quit(&event);
+                self.confirmed = game_manager::read_confirmation(&event);
+            }
             GameState::Quitting => (),
         }
         Ok(())
     }
 
     fn update(&mut self) -> Result<()> {
+        if self.kill_execution {
+            self.game_state = GameState::Quitting;
+        }
         match self.game_state {
             GameState::Starting => self.game_state = GameState::Playing,
             GameState::Helping => self.game_state = GameState::Menu,
             GameState::Menu | GameState::Lost => match self.menu_opt {
                 MenuOpt::Play => {
-                    self.board.reset_board();
+                    if let GameState::Lost = self.game_state {
+                        self.board.reset_board();
+                    }
                     self.game_state = GameState::Playing;
                 }
                 MenuOpt::Help => {
@@ -112,27 +129,24 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                         self.counter = 0;
                     }
                     PlayOpt::Quit => {
-                        self.game_state = GameState::Menu;
-                        if self.board.consult_score() > self.score_record {
-                            self.score_record = self.board.consult_score();
-                        }
-                        if self.board.consult_lines_completed() > self.line_record {
-                            self.line_record = self.board.consult_lines_completed();
-                        }
+                        self.game_state = GameState::AskingToQuit;
+                        self.update_record();
                     }
                     PlayOpt::None => (),
                 }
                 if self.board.defeated() {
                     self.game_state = GameState::Lost;
-                    if self.board.consult_score() > self.score_record {
-                        self.score_record = self.board.consult_score();
-                    }
-                    if self.board.consult_lines_completed() > self.line_record {
-                        self.line_record = self.board.consult_lines_completed();
-                    }
+                    self.update_record();
                 }
             }
             GameState::Pause => self.game_state = GameState::Playing,
+            GameState::AskingToQuit => match self.confirmed {
+                true => {
+                    self.game_state = GameState::Menu;
+                    self.board.reset_board();
+                }
+                false => self.game_state = GameState::Playing,
+            },
             GameState::Quitting => (),
         }
         Ok(())
@@ -174,13 +188,25 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "Record",
                 "You lost! Press enter to try again.",
             )?,
+            GameState::AskingToQuit => self.display_screen(
+                self.board.consult_score(),
+                self.board.consult_lines_completed(),
+                game_manager::confirmation_guide(),
+                "Quitting",
+                "Score",
+                "Are you sure you want to quit?",
+            )?,
             GameState::Quitting => (),
         }
         Ok(())
     }
 
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
+    }
+
     fn ended(&self) -> bool {
-        matches!(self.game_state, GameState::Quitting)
+        self.game_state == GameState::Quitting
     }
 }
 
@@ -191,10 +217,12 @@ impl<'a> TetrisGameManager<'a> {
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
+            confirmed: false,
             board: Board::new(),
             counter: 0,
             score_record: 0,
             line_record: 0,
+            kill_execution: false,
         }
     }
 
@@ -208,6 +236,15 @@ impl<'a> TetrisGameManager<'a> {
         String::from(
             "d or l or  - Move piece to the right\na or h or  - Move piece to the left\nw or k or  - Rotate piece\ns or j or  - Soft drop\nSPACE       - Hard drop\np           - Pause game\nESC or q    - Go back to menu\n ",
         )
+    }
+
+    fn update_record(&mut self) {
+        if self.board.consult_score() > self.score_record {
+            self.score_record = self.board.consult_score();
+        }
+        if self.board.consult_lines_completed() > self.line_record {
+            self.line_record = self.board.consult_lines_completed();
+        }
     }
 
     fn display_screen(
@@ -316,47 +353,18 @@ playground clear. It's easy to learn, but oh-so-addictive once you get going!",
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play;
-                    break;
-                }
-                _ => (),
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
             }
         }
         Ok(())
@@ -364,106 +372,31 @@ playground clear. It's easy to learn, but oh-so-addictive once you get going!",
 
     fn read_play_input(&mut self) -> Result<()> {
         if poll(Duration::from_millis(50))? {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('h'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('a'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Left,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Left,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('l'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('d'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Right,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Right,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('s'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::SoftDrop,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Rotate,
+            let event = read()?;
+            if should_move_left(&event) {
+                self.play_opt = PlayOpt::Left;
+            } else if should_move_right(&event) {
+                self.play_opt = PlayOpt::Right;
+            } else if should_move_down(&event) {
+                self.play_opt = PlayOpt::SoftDrop;
+            } else if should_move_up(&event) {
+                self.play_opt = PlayOpt::Rotate;
+            } else if should_pause(&event) {
+                self.play_opt = PlayOpt::Pause;
+            } else if should_quit(&event) {
+                self.play_opt = PlayOpt::Quit;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+            } else if matches!(
+                event,
                 Event::Key(KeyEvent {
                     code: KeyCode::Char(' '),
                     modifiers: KeyModifiers::NONE,
                     kind: KeyEventKind::Press,
                     ..
-                }) => self.play_opt = PlayOpt::HardDrop,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Pause,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
                 })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.play_opt = PlayOpt::Quit;
-                }
-                _ => (),
+            ) {
+                self.play_opt = PlayOpt::HardDrop;
             }
         } else {
             self.play_opt = PlayOpt::None;
