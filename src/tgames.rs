@@ -101,9 +101,6 @@ impl TGamesManager {
             TGamesState::MainMenu => match self.main_menu_opts {
                 MainMenuOpts::Play => {
                     self.play()?;
-                    if self.kill_execution {
-                        self.execution_state = TGamesState::Quitting;
-                    }
                 }
                 MainMenuOpts::Quit => self.execution_state = TGamesState::Quitting,
                 MainMenuOpts::Up => {
@@ -119,6 +116,9 @@ impl TGamesManager {
                 MainMenuOpts::None => (),
             },
             TGamesState::Quitting => (),
+        }
+        if self.kill_execution {
+            self.execution_state = TGamesState::Quitting;
         }
         Ok(())
     }
