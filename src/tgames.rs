@@ -6,11 +6,16 @@ mod snake_gm;
 mod tetris_gm;
 
 use self::{
-    flappy_bird_gm::FlappyBirdGameManager, g2048_gm::G2048GameManager, game_manager::GameManager,
-    minesweeper_gm::MinesweeperGameManager, snake_gm::SnakeGameManager,
+    flappy_bird_gm::FlappyBirdGameManager,
+    g2048_gm::G2048GameManager,
+    game_manager::{
+        should_force_quit, should_move_down, should_move_up, should_play, should_quit, GameManager,
+    },
+    minesweeper_gm::MinesweeperGameManager,
+    snake_gm::SnakeGameManager,
     tetris_gm::TetrisGameManager,
 };
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -91,13 +96,15 @@ impl TGamesManager {
     }
 
     fn update(&mut self) -> Result<()> {
-        if self.kill_execution {
-            self.execution_state = TGamesState::Quitting;
-        }
         match self.execution_state {
             TGamesState::Starting => self.execution_state = TGamesState::MainMenu,
             TGamesState::MainMenu => match self.main_menu_opts {
-                MainMenuOpts::Play => self.play()?,
+                MainMenuOpts::Play => {
+                    self.play()?;
+                    if self.kill_execution {
+                        self.execution_state = TGamesState::Quitting;
+                    }
+                }
                 MainMenuOpts::Quit => self.execution_state = TGamesState::Quitting,
                 MainMenuOpts::Up => {
                     if self.game_index > 0 {
@@ -233,83 +240,21 @@ considering giving a start on github!",
     fn read_main_menu_input(&mut self) -> Result<()> {
         loop {
             let event = event::read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    self.main_menu_opts = MainMenuOpts::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    self.main_menu_opts = MainMenuOpts::Play;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    self.main_menu_opts = MainMenuOpts::Up;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('s'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('j'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    self.main_menu_opts = MainMenuOpts::Down;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('c'),
-                    kind: KeyEventKind::Press,
-                    modifiers: KeyModifiers::CONTROL,
-                    ..
-                }) => {
-                    self.kill_execution = true;
-                    break;
-                }
-                _ => (),
+            if should_quit(&event) {
+                self.main_menu_opts = MainMenuOpts::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_play(&event) {
+                self.main_menu_opts = MainMenuOpts::Play;
+                break;
+            } else if should_move_up(&event) {
+                self.main_menu_opts = MainMenuOpts::Up;
+                break;
+            } else if should_move_down(&event) {
+                self.main_menu_opts = MainMenuOpts::Down;
+                break;
             }
         }
         Ok(())

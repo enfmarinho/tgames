@@ -1,6 +1,9 @@
 mod board;
 
-use super::game_manager::{self, GameManager};
+use super::game_manager::{
+    self, should_force_quit, should_help, should_move_up, should_pause, should_play, should_quit,
+    GameManager,
+};
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -67,7 +70,7 @@ impl<'a> GameManager for FlappyBirdGameManager<'a> {
             GameState::Helping | GameState::Pause => game_manager::read_key()?,
             GameState::AskingToQuit => {
                 let event = read()?;
-                self.kill_execution = game_manager::force_quit(&event);
+                self.kill_execution = game_manager::should_force_quit(&event);
                 self.confirmed = game_manager::read_confirmation(&event);
             }
             GameState::Quitting => (),
@@ -291,74 +294,24 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
     fn read_menu_input(&mut self) -> Result<()> {
         loop {
             let event = read()?;
-            match event {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Quit;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('?'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Help;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Enter,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::Play;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('F'),
-                    modifiers: KeyModifiers::SHIFT,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::IncreaseFPS;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('f'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.menu_opt = MenuOpt::DecreaseFPS;
-                    break;
-                }
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('c'),
-                    modifiers: KeyModifiers::CONTROL,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => {
-                    self.kill_execution = true;
-                    break;
-                }
-                _ => (),
+            if should_quit(&event) {
+                self.menu_opt = MenuOpt::Quit;
+                break;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
+                break;
+            } else if should_help(&event) {
+                self.menu_opt = MenuOpt::Help;
+                break;
+            } else if should_play(&event) {
+                self.menu_opt = MenuOpt::Play;
+                break;
+            } else if game_manager::should_increase_fps(&event) {
+                self.menu_opt = MenuOpt::IncreaseFPS;
+                break;
+            } else if game_manager::should_decrease_fps(&event) {
+                self.menu_opt = MenuOpt::DecreaseFPS;
+                break;
             }
         }
         Ok(())
@@ -366,56 +319,25 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
 
     fn read_play_input(&mut self) -> Result<()> {
         if poll(Duration::from_millis(50))? {
-            match read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('k'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('w'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Up,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char(' '),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Jump,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Pause,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Esc,
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                })
-                | Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.play_opt = PlayOpt::Quit,
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('c'),
-                    modifiers: KeyModifiers::CONTROL,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) => self.kill_execution = true,
-                _ => (),
+            let event = read()?;
+            if should_move_up(&event)
+                || matches!(
+                    event,
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char(' '),
+                        modifiers: KeyModifiers::NONE,
+                        kind: KeyEventKind::Press,
+                        ..
+                    })
+                )
+            {
+                self.play_opt = PlayOpt::Jump;
+            } else if should_pause(&event) {
+                self.play_opt = PlayOpt::Pause;
+            } else if should_quit(&event) {
+                self.play_opt = PlayOpt::Quit;
+            } else if should_force_quit(&event) {
+                self.kill_execution = true;
             }
         } else {
             self.play_opt = PlayOpt::None;
