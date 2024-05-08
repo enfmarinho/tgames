@@ -105,6 +105,9 @@ impl Board {
     }
 
     pub fn reset(&mut self, difficult: &Difficult) {
+        self.score = 0;
+        self.hide_cursor = false;
+        self.revealed_bomb = NOT_REVEALED;
         match difficult {
             Difficult::Easy => self.board_info = EASY_BOARD_INFO,
             Difficult::Medium => self.board_info = MEDIUM_BOARD_INFO,
@@ -137,17 +140,14 @@ impl Board {
                 self.curr_line %= self.board_info.height;
             }
         }
-        self.score = 0;
-        self.hide_cursor = false;
-        self.revealed_bomb = NOT_REVEALED;
         self.reveal_block(self.curr_line, self.curr_column);
     }
 
     fn update_close_square_counter(&mut self, line: usize, column: usize) {
         if let Square::Close(_) = *self.consult_position(line, column) {
             let mut counter = 0;
-            for line_offset in -1..2 {
-                for column_offset in -1..2 {
+            for line_offset in -1..=1 {
+                for column_offset in -1..=1 {
                     let consult_line = line as i32 + line_offset;
                     let consult_column = column as i32 + column_offset;
                     if self.in_bounds(consult_line, consult_column)
@@ -292,13 +292,13 @@ impl Board {
                             6 => Color::Yellow,
                             _ => Color::Magenta,
                         };
-                        let char = if amount == 0 {
+                        let amount = if amount == 0 {
                             "  ".to_string()
                         } else {
                             amount.to_string() + " "
                         };
                         spans.push(Span::styled(
-                            char,
+                            amount,
                             Style::default().fg(color).bg(background_color),
                         ));
                     }
@@ -316,12 +316,7 @@ impl Board {
                         }
                     }
                     Square::Uncertain(correct) => {
-                        if self.revealed_bomb == NOT_REVEALED || correct {
-                            spans.push(
-                                Span::styled("? ", Style::default().fg(Color::LightMagenta))
-                                    .bg(background_color),
-                            );
-                        } else {
+                        if self.revealed_bomb != NOT_REVEALED && !correct {
                             spans.push(
                                 Span::styled("󰛅 ", Style::default().fg(Color::DarkGray))
                                     .bg(background_color),
