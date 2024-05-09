@@ -85,6 +85,10 @@ impl Board {
             for column in 0..self.board_info.width {
                 if let Square::Close(_) = *self.consult_position(line, column) {
                     return false;
+                } else if let Square::Bomb = *self.consult_position(line, column) {
+                    return false;
+                } else if let Square::Uncertain(_) = *self.consult_position(line, column) {
+                    return false;
                 }
             }
         }
