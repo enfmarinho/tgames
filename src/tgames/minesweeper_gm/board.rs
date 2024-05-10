@@ -325,6 +325,11 @@ impl Board {
                                 Span::styled("󰛅 ", Style::default().fg(Color::DarkGray))
                                     .bg(background_color),
                             );
+                        } else {
+                            spans.push(
+                                Span::styled("? ", Style::default().fg(Color::Magenta))
+                                    .bg(background_color),
+                            );
                         }
                     }
                     Square::Close(_) => {
