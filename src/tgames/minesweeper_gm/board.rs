@@ -55,7 +55,7 @@ pub struct Board {
     curr_line: usize,
     curr_column: usize,
     revealed_bomb: SquarePosition,
-    score: usize,
+    score: u32,
 }
 
 impl Board {
@@ -379,7 +379,7 @@ impl Board {
         )));
     }
 
-    pub fn score(&self) -> usize {
+    pub fn score(&self) -> u32 {
         self.score
     }
 

@@ -1,9 +1,12 @@
 mod board;
 
-use super::game_manager::{
-    self, should_decrease_fps, should_force_quit, should_help, should_increase_fps,
-    should_move_down, should_move_left, should_move_right, should_move_up, should_play,
-    should_quit, Directions,
+use super::{
+    super::input::{
+        read_confirmation, read_key, should_decrease_fps, should_force_quit, should_help,
+        should_increase_fps, should_move_down, should_move_left, should_move_right, should_move_up,
+        should_play, should_quit,
+    },
+    game_manager::{self, Directions},
 };
 use board::Board;
 use crossterm::event::{poll, read};
@@ -42,8 +45,7 @@ enum GameState {
     Quitting,
 }
 
-pub struct SnakeGameManager<'a> {
-    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+pub struct SnakeGameManager {
     game_state: GameState,
     menu_opt: MenuOpt,
     direction: Directions,
@@ -53,17 +55,17 @@ pub struct SnakeGameManager<'a> {
     fps: u64,
     kill_execution: bool,
 }
-impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
+impl game_manager::GameManager for SnakeGameManager {
     fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
             GameState::Menu | GameState::Won | GameState::Lost => self.read_menu_input()?,
-            GameState::Helping => game_manager::read_key()?,
+            GameState::Helping => read_key()?,
             GameState::Playing => self.read_play_input()?,
             GameState::AskingToQuit => {
                 let event = read()?;
-                self.kill_execution = game_manager::should_force_quit(&event);
-                self.confirmed = game_manager::read_confirmation(&event);
+                self.kill_execution = should_force_quit(&event);
+                self.confirmed = read_confirmation(&event);
             }
             GameState::Quitting => (),
         }
@@ -116,11 +118,12 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
         Ok(())
     }
 
-    fn render(&mut self) -> Result<()> {
+    fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => self.display_game_rules()?,
+            GameState::Helping => self.display_game_rules(terminal)?,
             GameState::Menu => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -129,6 +132,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 Self::play_guide(),
                 "Game board",
@@ -137,6 +141,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Won => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -145,6 +150,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Green,
             )?,
             GameState::Lost => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -153,6 +159,7 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
                 Color::Red,
             )?,
             GameState::AskingToQuit => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 game_manager::confirmation_guide(),
                 "Quitting",
@@ -163,6 +170,13 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
             GameState::Quitting => (),
         }
         Ok(())
+    }
+
+    fn reset(&mut self) {
+        self.game_state = GameState::Starting;
+        self.direction = Directions::Right;
+        self.menu_opt = MenuOpt::None;
+        self.board.reset_board();
     }
 
     fn kill_execution(&self) -> bool {
@@ -177,10 +191,9 @@ impl<'a> game_manager::GameManager for SnakeGameManager<'a> {
         std::thread::sleep(Duration::from_millis(1000 / self.fps));
     }
 }
-impl<'a> SnakeGameManager<'a> {
-    pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
+impl SnakeGameManager {
+    pub fn new() -> Self {
         SnakeGameManager {
-            terminal,
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             direction: Directions::Right,
@@ -192,7 +205,10 @@ impl<'a> SnakeGameManager<'a> {
         }
     }
 
-    fn display_game_rules(&mut self) -> Result<()> {
+    fn display_game_rules(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    ) -> Result<()> {
         let message = String::from(
             "Imagine you're a little snake, slithering around a tiny world, looking for food. In 
 this game, you control the snake's movements, guiding it across the screen.
@@ -211,7 +227,7 @@ So, to sum it up: guide your snake around, gobble up the food to grow longer, an
 crashing into anything. It's a simple concept, but you'll find yourself hooked in no time,
 trying to beat your high score with each game!",
         );
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
@@ -220,6 +236,7 @@ trying to beat your high score with each game!",
 
     fn display_screen(
         &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         score: u32,
         help_message: String,
         title: &str,
@@ -227,7 +244,7 @@ trying to beat your high score with each game!",
         message: &str,
         color: Color,
     ) -> Result<()> {
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])

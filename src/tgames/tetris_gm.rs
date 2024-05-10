@@ -1,9 +1,13 @@
 mod board;
 mod bricks;
 
-use super::game_manager::{
-    self, should_force_quit, should_help, should_move_down, should_move_left, should_move_right,
-    should_move_up, should_pause, should_play, should_quit, GameManager,
+use super::{
+    super::input::{
+        read_confirmation, read_key, should_force_quit, should_help, should_move_down,
+        should_move_left, should_move_right, should_move_up, should_pause, should_play,
+        should_quit,
+    },
+    game_manager::{self, GameManager},
 };
 use board::Board;
 use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -49,30 +53,29 @@ enum GameState {
     Quitting,
 }
 
-pub struct TetrisGameManager<'a> {
-    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+pub struct TetrisGameManager {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
     confirmed: bool,
     board: Board,
-    counter: usize,
+    counter: u32,
     score_record: u32,
     line_record: u32,
     kill_execution: bool,
 }
-impl<'a> GameManager for TetrisGameManager<'a> {
+impl GameManager for TetrisGameManager {
     fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => game_manager::read_key()?,
+            GameState::Helping => read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
-            GameState::Pause => game_manager::read_key()?,
+            GameState::Pause => read_key()?,
             GameState::AskingToQuit => {
                 let event = read()?;
-                self.kill_execution = game_manager::should_force_quit(&event);
-                self.confirmed = game_manager::read_confirmation(&event);
+                self.kill_execution = should_force_quit(&event);
+                self.confirmed = read_confirmation(&event);
             }
             GameState::Quitting => (),
         }
@@ -152,11 +155,12 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         Ok(())
     }
 
-    fn render(&mut self) -> Result<()> {
+    fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => self.display_game_rules()?,
+            GameState::Helping => self.display_game_rules(terminal)?,
             GameState::Menu => self.display_screen(
+                terminal,
                 self.score_record,
                 self.line_record,
                 Self::menu_guide(),
@@ -165,6 +169,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "",
             )?,
             GameState::Playing => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 self.board.consult_lines_completed(),
                 Self::play_guide(),
@@ -173,6 +178,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "",
             )?,
             GameState::Pause => self.display_screen(
+                terminal,
                 self.score_record,
                 self.line_record,
                 Self::menu_guide(),
@@ -181,6 +187,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "Game is paused. Press enter to continue.",
             )?,
             GameState::Lost => self.display_screen(
+                terminal,
                 self.score_record,
                 self.line_record,
                 Self::menu_guide(),
@@ -189,6 +196,7 @@ impl<'a> GameManager for TetrisGameManager<'a> {
                 "You lost! Press enter to try again.",
             )?,
             GameState::AskingToQuit => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 self.board.consult_lines_completed(),
                 game_manager::confirmation_guide(),
@@ -201,6 +209,12 @@ impl<'a> GameManager for TetrisGameManager<'a> {
         Ok(())
     }
 
+    fn reset(&mut self) {
+        self.game_state = GameState::Starting;
+        self.counter = 0;
+        self.board.reset_board();
+    }
+
     fn kill_execution(&self) -> bool {
         self.kill_execution
     }
@@ -210,10 +224,9 @@ impl<'a> GameManager for TetrisGameManager<'a> {
     }
 }
 
-impl<'a> TetrisGameManager<'a> {
-    pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
+impl TetrisGameManager {
+    pub fn new() -> Self {
         Self {
-            terminal,
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
@@ -249,6 +262,7 @@ impl<'a> TetrisGameManager<'a> {
 
     fn display_screen(
         &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         score: u32,
         line_score: u32,
         help_message: String,
@@ -256,7 +270,7 @@ impl<'a> TetrisGameManager<'a> {
         score_title: &str,
         message: &str,
     ) -> Result<()> {
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -324,7 +338,10 @@ impl<'a> TetrisGameManager<'a> {
         Ok(())
     }
 
-    fn display_game_rules(&mut self) -> Result<()> {
+    fn display_game_rules(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    ) -> Result<()> {
         let message = String::from(
             "Tetris is like a puzzle game where you fit different shapes together to clear lines.
 Imagine you have a little playground, and colorful blocks start falling from the sky,
@@ -343,7 +360,7 @@ over!
 So, in short: move, spin, and stack the falling blocks to make solid lines and keep the 
 playground clear. It's easy to learn, but oh-so-addictive once you get going!",
         );
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;

@@ -1,10 +1,12 @@
 mod board;
 
 use self::board::Board;
-
-use super::game_manager::{
-    self, should_force_quit, should_help, should_move_down, should_move_left, should_move_right,
-    should_move_up, should_play, should_quit, Directions, GameManager,
+use super::{
+    super::input::{
+        read_confirmation, read_key, should_force_quit, should_help, should_move_down,
+        should_move_left, should_move_right, should_move_up, should_play, should_quit,
+    },
+    game_manager::{self, Directions, GameManager},
 };
 use crossterm::event::read;
 use ratatui::{
@@ -40,8 +42,7 @@ enum GameState {
     Quitting,
 }
 
-pub struct G2048GameManager<'a> {
-    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+pub struct G2048GameManager {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opts: PlayOpt,
@@ -51,17 +52,17 @@ pub struct G2048GameManager<'a> {
     kill_execution: bool,
 }
 
-impl<'a> GameManager for G2048GameManager<'a> {
+impl GameManager for G2048GameManager {
     fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => game_manager::read_key()?,
+            GameState::Helping => read_key()?,
             GameState::Menu | GameState::Lost => self.read_menu_input()?,
             GameState::Playing => self.read_play_input()?,
             GameState::AskingToQuit => {
                 let event = read()?;
-                self.kill_execution = game_manager::should_force_quit(&event);
-                self.confirmed = game_manager::read_confirmation(&event);
+                self.kill_execution = should_force_quit(&event);
+                self.confirmed = read_confirmation(&event);
             }
             GameState::Quitting => (),
         }
@@ -114,11 +115,12 @@ impl<'a> GameManager for G2048GameManager<'a> {
         Ok(())
     }
 
-    fn render(&mut self) -> Result<()> {
+    fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
-            GameState::Helping => self.display_game_rules()?,
+            GameState::Helping => self.display_game_rules(terminal)?,
             GameState::Menu => self.display_screen(
+                terminal,
                 self.record,
                 G2048GameManager::menu_guide(),
                 "Menu",
@@ -127,6 +129,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Playing => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 G2048GameManager::play_guide(),
                 "Game board",
@@ -135,6 +138,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 Color::Gray,
             )?,
             GameState::Lost => self.display_screen(
+                terminal,
                 self.record,
                 G2048GameManager::menu_guide(),
                 "Menu",
@@ -143,6 +147,7 @@ impl<'a> GameManager for G2048GameManager<'a> {
                 Color::Red,
             )?,
             GameState::AskingToQuit => self.display_screen(
+                terminal,
                 self.board.consult_score(),
                 game_manager::confirmation_guide(),
                 "Quitting",
@@ -155,6 +160,12 @@ impl<'a> GameManager for G2048GameManager<'a> {
         Ok(())
     }
 
+    fn reset(&mut self) {
+        self.game_state = GameState::Starting;
+        self.board.reset_board();
+        self.board.start_game();
+    }
+
     fn kill_execution(&self) -> bool {
         self.kill_execution
     }
@@ -164,10 +175,9 @@ impl<'a> GameManager for G2048GameManager<'a> {
     }
 }
 
-impl<'a> G2048GameManager<'a> {
-    pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
+impl G2048GameManager {
+    pub fn new() -> Self {
         Self {
-            terminal,
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opts: PlayOpt::None,
@@ -192,6 +202,7 @@ impl<'a> G2048GameManager<'a> {
 
     fn display_screen(
         &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
         score: u32,
         help_message: String,
         title: &str,
@@ -199,7 +210,7 @@ impl<'a> G2048GameManager<'a> {
         message: &str,
         color: Color,
     ) -> Result<()> {
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
@@ -256,7 +267,10 @@ impl<'a> G2048GameManager<'a> {
         Ok(())
     }
 
-    fn display_game_rules(&mut self) -> Result<()> {
+    fn display_game_rules(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    ) -> Result<()> {
         let message = String::from(
             "Picture a tiny grid filled with numbered tiles, and your job is to combine them to 
 reach the elusive number 2048.
@@ -279,7 +293,7 @@ see if you can reach that elusive 2048 tile!
 It's a simple yet addictive puzzle that'll have you sliding tiles and chasing that 
 elusive number for hours on end. Enjoy the challenge!",
         );
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area);
         })?;

@@ -1,4 +1,6 @@
+mod input;
 mod tgames;
+
 use crossterm::{
     style::Stylize,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},

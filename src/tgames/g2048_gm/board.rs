@@ -22,8 +22,7 @@ impl Board {
             lost: false,
         };
         board.board.resize(NUMBER_OF_LINES * NUMBER_OF_COLUMNS, 0);
-        board.generate_block();
-        board.generate_block();
+        board.start_game();
         board
     }
 

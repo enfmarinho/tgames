@@ -6,15 +6,11 @@ mod snake_gm;
 mod tetris_gm;
 
 use self::{
-    flappy_bird_gm::FlappyBirdGameManager,
-    g2048_gm::G2048GameManager,
-    game_manager::{
-        should_force_quit, should_move_down, should_move_up, should_play, should_quit, GameManager,
-    },
-    minesweeper_gm::MinesweeperGameManager,
-    snake_gm::SnakeGameManager,
+    flappy_bird_gm::FlappyBirdGameManager, g2048_gm::G2048GameManager,
+    minesweeper_gm::MinesweeperGameManager, snake_gm::SnakeGameManager,
     tetris_gm::TetrisGameManager,
 };
+use super::input::{should_force_quit, should_move_down, should_move_up, should_play, should_quit};
 use crossterm::event;
 use ratatui::{
     backend::CrosstermBackend,
@@ -44,7 +40,10 @@ pub enum Games {
 pub fn run(terminal: Terminal<CrosstermBackend<Stdout>>, game: Games) -> Result<()> {
     let mut game_instance = TGamesManager::new(terminal);
     if Games::None != game {
-        game_instance.run_game(game)?;
+        game_instance.game_index = Games::iter()
+            .position(|current| current == game)
+            .expect("Could not get game index");
+        game_instance.run_game()?;
     }
     while !game_instance.ended() {
         game_instance.process_events()?;
@@ -73,16 +72,22 @@ struct TGamesManager {
     execution_state: TGamesState,
     main_menu_opts: MainMenuOpts,
     game_index: usize,
+    game_instance: Vec<Option<Box<dyn game_manager::GameManager>>>,
     kill_execution: bool,
 }
 
 impl TGamesManager {
     fn new(terminal: Terminal<CrosstermBackend<Stdout>>) -> TGamesManager {
+        let mut game_instance = Vec::new();
+        for _ in 0..Games::COUNT {
+            game_instance.push(None);
+        }
         TGamesManager {
             terminal,
             execution_state: TGamesState::Starting,
             main_menu_opts: MainMenuOpts::None,
             game_index: 0,
+            game_instance,
             kill_execution: false,
         }
     }
@@ -100,7 +105,7 @@ impl TGamesManager {
             TGamesState::Starting => self.execution_state = TGamesState::MainMenu,
             TGamesState::MainMenu => match self.main_menu_opts {
                 MainMenuOpts::Play => {
-                    self.play()?;
+                    self.run_game()?;
                 }
                 MainMenuOpts::Quit => self.execution_state = TGamesState::Quitting,
                 MainMenuOpts::Up => {
@@ -260,25 +265,34 @@ considering giving a start on github!",
         Ok(())
     }
 
-    fn play(&mut self) -> Result<()> {
+    fn run_game(&mut self) -> Result<()> {
         match Games::from_repr(self.game_index) {
-            Some(game) => self.run_game(game)?,
-            None => self.game_index = 0,
-        }
-        Ok(())
-    }
-
-    fn run_game(&mut self, game: Games) -> Result<()> {
-        if let Ok(true) = match game {
-            Games::Snake => SnakeGameManager::new(&mut self.terminal).run(),
-            Games::Tetris => TetrisGameManager::new(&mut self.terminal).run(),
-            Games::G2048 => G2048GameManager::new(&mut self.terminal).run(),
-            Games::Minesweeper => MinesweeperGameManager::new(&mut self.terminal).run(),
-            Games::FlappyBird => FlappyBirdGameManager::new(&mut self.terminal).run(),
-            Games::None => Ok(false),
-        } {
-            self.kill_execution = true;
-        }
+            Some(game) => {
+                if let Ok(true) = match game {
+                    Games::Snake => self.game_instance[self.game_index]
+                        .get_or_insert_with(|| Box::new(SnakeGameManager::new()))
+                        .run(&mut self.terminal),
+                    Games::Tetris => self.game_instance[self.game_index]
+                        .get_or_insert_with(|| Box::new(TetrisGameManager::new()))
+                        .run(&mut self.terminal),
+                    Games::G2048 => self.game_instance[self.game_index]
+                        .get_or_insert_with(|| Box::new(G2048GameManager::new()))
+                        .run(&mut self.terminal),
+                    Games::Minesweeper => self.game_instance[self.game_index]
+                        .get_or_insert_with(|| Box::new(MinesweeperGameManager::new()))
+                        .run(&mut self.terminal),
+                    Games::FlappyBird => self.game_instance[self.game_index]
+                        .get_or_insert_with(|| Box::new(FlappyBirdGameManager::new()))
+                        .run(&mut self.terminal),
+                    Games::None => Ok(false),
+                } {
+                    self.kill_execution = true;
+                }
+            }
+            None => {
+                self.game_index = 0;
+            }
+        };
         Ok(())
     }
 }

@@ -1,8 +1,11 @@
 mod board;
 
-use super::game_manager::{
-    self, read_key, should_force_quit, should_help, should_move_down, should_move_left,
-    should_move_right, should_move_up, should_play, should_quit, Difficult, Directions,
+use super::{
+    super::input::{
+        read_confirmation, read_key, should_force_quit, should_help, should_move_down,
+        should_move_left, should_move_right, should_move_up, should_play, should_quit,
+    },
+    game_manager::{self, Difficult, Directions},
 };
 use board::Board;
 use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -42,19 +45,18 @@ enum PlayOpt {
     None,
 }
 
-pub struct MinesweeperGameManager<'a> {
-    terminal: &'a mut Terminal<CrosstermBackend<Stdout>>,
+pub struct MinesweeperGameManager {
     game_state: GameState,
     menu_opt: MenuOpt,
     play_opt: PlayOpt,
     confirmed: bool,
     difficult: Difficult,
     board: Board,
-    record: usize,
+    record: u32,
     kill_execution: bool,
 }
 
-impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
+impl game_manager::GameManager for MinesweeperGameManager {
     fn process_events(&mut self) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
@@ -63,8 +65,8 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
             GameState::Helping => read_key()?,
             GameState::AskingToQuit => {
                 let event = read()?;
-                self.kill_execution = game_manager::should_force_quit(&event);
-                self.confirmed = game_manager::read_confirmation(&event);
+                self.kill_execution = should_force_quit(&event);
+                self.confirmed = read_confirmation(&event);
             }
             GameState::Quitting => (),
         }
@@ -116,10 +118,11 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         }
         Ok(())
     }
-    fn render(&mut self) -> Result<()> {
+    fn render(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         match self.game_state {
             GameState::Starting => (),
             GameState::Menu => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -128,6 +131,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 Color::default(),
             )?,
             GameState::Playing => self.display_screen(
+                terminal,
                 self.board.score(),
                 Self::play_guide(),
                 "Board",
@@ -135,8 +139,9 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 "",
                 Color::default(),
             )?,
-            GameState::Helping => self.display_game_rules()?,
+            GameState::Helping => self.display_game_rules(terminal)?,
             GameState::Won => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -145,6 +150,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 Color::Green,
             )?,
             GameState::Lost => self.display_screen(
+                terminal,
                 self.record,
                 Self::menu_guide(),
                 "Menu",
@@ -153,6 +159,7 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
                 Color::Red,
             )?,
             GameState::AskingToQuit => self.display_screen(
+                terminal,
                 self.board.score(),
                 game_manager::confirmation_guide(),
                 "Quitting",
@@ -165,6 +172,11 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
         Ok(())
     }
 
+    fn reset(&mut self) {
+        self.game_state = GameState::Starting;
+        self.board.reset(&self.difficult);
+    }
+
     fn kill_execution(&self) -> bool {
         self.kill_execution
     }
@@ -174,10 +186,9 @@ impl<'a> game_manager::GameManager for MinesweeperGameManager<'a> {
     }
 }
 
-impl<'a> MinesweeperGameManager<'a> {
-    pub fn new(terminal: &'a mut Terminal<CrosstermBackend<Stdout>>) -> Self {
+impl MinesweeperGameManager {
+    pub fn new() -> Self {
         Self {
-            terminal,
             game_state: GameState::Starting,
             menu_opt: MenuOpt::None,
             play_opt: PlayOpt::None,
@@ -203,14 +214,15 @@ impl<'a> MinesweeperGameManager<'a> {
 
     fn display_screen(
         &mut self,
-        score: usize,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        score: u32,
         help_message: String,
         title: &str,
         score_title: &str,
         message: &str,
         color: Color,
     ) -> Result<()> {
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
@@ -267,7 +279,10 @@ impl<'a> MinesweeperGameManager<'a> {
         Ok(())
     }
 
-    fn display_game_rules(&mut self) -> Result<()> {
+    fn display_game_rules(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    ) -> Result<()> {
         let message = String::from(
 "Picture a grid, like a little field, filled with hidden mines and numbers. Your job is to
 uncover all the squares on the grid without detonating any mines.
@@ -292,7 +307,7 @@ clear the entire grid without detonating any mines, you win!
 So, in summary: click to uncover squares, use the numbers to avoid the mines, and mark potential
 mines with flags. It's a classic game of strategy and deduction that's perfect for relaxing and 
 exercising your brain!");
-        self.terminal.draw(|frame| {
+        terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
