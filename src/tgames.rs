@@ -233,7 +233,7 @@ the application (obviously).",
 
     fn developer_message() -> String {
         String::from(
-            "This project in current under developent so any
+            "This project in current under development so any
 suggestions, feature request or bug report are
 welcome, just create an issue on the github 
 repository \"enfmarinho/tgames\", the link can be
