@@ -238,7 +238,7 @@ suggestions, feature request or bug report are
 welcome, just create an issue on the github 
 repository \"enfmarinho/tgames\", the link can be
 found on the crates.io page of this project. Also 
-considering giving a start on github!",
+consider giving it a start on github!",
         )
     }
 
