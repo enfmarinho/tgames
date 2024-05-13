@@ -186,12 +186,12 @@ impl GameManager for FlappyBirdGameManager {
         self.board.reset_board();
     }
 
-    fn kill_execution(&self) -> bool {
-        self.kill_execution
-    }
-
     fn ended(&self) -> bool {
         matches!(self.game_state, GameState::Quitting)
+    }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
     }
 
     fn limit_fps(&self) {

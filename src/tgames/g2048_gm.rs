@@ -166,12 +166,12 @@ impl GameManager for G2048GameManager {
         self.board.start_game();
     }
 
-    fn kill_execution(&self) -> bool {
-        self.kill_execution
-    }
-
     fn ended(&self) -> bool {
         matches!(self.game_state, GameState::Quitting)
+    }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
     }
 }
 

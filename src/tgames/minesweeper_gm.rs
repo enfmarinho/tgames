@@ -177,12 +177,12 @@ impl game_manager::GameManager for MinesweeperGameManager {
         self.board.reset(&self.difficult);
     }
 
-    fn kill_execution(&self) -> bool {
-        self.kill_execution
-    }
-
     fn ended(&self) -> bool {
         self.game_state == GameState::Quitting
+    }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
     }
 }
 

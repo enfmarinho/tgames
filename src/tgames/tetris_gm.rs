@@ -215,12 +215,12 @@ impl GameManager for TetrisGameManager {
         self.board.reset_board();
     }
 
-    fn kill_execution(&self) -> bool {
-        self.kill_execution
-    }
-
     fn ended(&self) -> bool {
         self.game_state == GameState::Quitting
+    }
+
+    fn kill_execution(&self) -> bool {
+        self.kill_execution
     }
 }
 
