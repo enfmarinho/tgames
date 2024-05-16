@@ -2,7 +2,7 @@
 Terminal mini games emulator featuring famous games such as Snake, Tetris, Minesweeper 
 and others.
 
-![Demo](./resources/demo.mp4)
+![ezgif com-video-to-gif](resources/demo)
 
 # List of games
 - Snake
