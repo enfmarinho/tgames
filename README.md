@@ -68,6 +68,8 @@ I chose Rust for this project not just for its modern syntax, but for the specif
 
 * **Fearless Concurrency:** Rust’s ownership model ensured that my multi-threaded input handling remained data-race free, allowing for a stable, non-blocking game loop.
 
-* **Deterministic Resource Management:** Rust allows for precise control over heap allocations. This ensures that the game's "tick rate" remains constant, providing a smooth, predictable experience even as game state complexity grows.
+* **Deterministic Resource Management:** Rust allows for precise control over heap allocations. This ensures that the runtime execution and memory footprint of the program to remain highly predictable.
 
 * **Zero-Cost Abstractions:** The Trait-based architecture used in tgames allows for high-level modularity without sacrificing the performance of the underlying machine code.
+
+* **Learning:** Beyond the technical requirements, I chose Rust out of curiosity and desire to master a modern approach to systems design. I wanted to move away from manual memory management and learn the Borrow Checker to improve my ability to write memory-safe software.
