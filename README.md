@@ -22,8 +22,10 @@ A terminal-based mini-games emulator.
 * **Easy Extension:** Adding a new game is as simple as adding a variant to the `Games` enum and implementing the `GameManager` trait for a new struct. No changes to the core engine are required
 
 ## 🚀 Adding a New Game
-The engine is designed for modularity. To add a game, simply implement the `GameManager` trait:
+The engine uses the Strategy Pattern to remain decoupled from game logic.
+To add a new game, simply implement the GameManager trait and register it in the central dispatcher.
 
+### Implement the Trait
 ```rust
 impl GameManager for MyNewGame {
     fn process_events(&mut self) -> Result<()> { /* Handle non-blocking input */ }
@@ -31,7 +33,23 @@ impl GameManager for MyNewGame {
     fn render(&mut self, terminal: &mut ...)   { /* Draw to TUI via Ratatui */ }
     fn reset(&mut self)                        { /* Re-initialize state */ }
     fn ended(&self) -> bool                    { /* Game Over condition */ }
-    fn kill_execution(&self) -> bool           { /* Kill game execution */ }
+    fn kill_execution(&self) -> bool           { /* Kill game execution condition */ }
+}
+```
+
+### Register the game
+Add the variant to the `Games` enum. The engine handles the lifecycle and state transitions automatically. New games are registered within the run_game dispatcher:
+```Rust
+fn run_game(&mut self) -> Result<()> {
+    // more code...
+    match game {
+        Games::MyNewGame => self.game_instance[index]
+            .get_or_insert_with(|| Box::new(MyNewGame::new()))
+            .run(&mut self.terminal),
+        // Other games logic...
+        _ => { /* ... */ }
+    }
+    // more code...
 }
 ```
 
