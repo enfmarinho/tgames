@@ -1,11 +1,15 @@
+<div align="center">
+
 # 🕹️ tgames
+
 ![Rust](https://img.shields.io/badge/language-rust-orange.svg) 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Cargo](https://img.shields.io/badge/package-cargo-red.svg)
 
-A terminal-based mini-games emulator.
+<img src="resources/demo.gif" alt="tgames demo" width="800">
 
-![tgames demo](https://github.com/enfmarinho/tgames/blob/main/resources/demo.gif)
+A terminal-based mini-games emulator.
+</div>
 
 ## 🎮 List of games
 - Snake
