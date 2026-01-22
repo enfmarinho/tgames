@@ -228,7 +228,7 @@ crashing into anything. It's a simple concept, but you'll find yourself hooked i
 trying to beat your high score with each game!",
         );
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
         Ok(())
@@ -248,7 +248,7 @@ trying to beat your high score with each game!",
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(frame.size());
+                .split(frame.area());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(15), Constraint::Percentage(85)])

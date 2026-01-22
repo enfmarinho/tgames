@@ -1,5 +1,4 @@
 use super::board::BoardPossibilities;
-use rand::Rng;
 
 const NUMBER_OF_BRICKS: i32 = 7;
 
@@ -12,7 +11,7 @@ pub struct Brick {
 }
 impl Brick {
     pub fn new() -> Self {
-        let random = rand::thread_rng().gen_range(0..NUMBER_OF_BRICKS);
+        let random = rand::random_range(0..NUMBER_OF_BRICKS);
         match random {
             0 => Self {
                 coord: Self::i_shape(),

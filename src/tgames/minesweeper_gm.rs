@@ -226,7 +226,7 @@ impl MinesweeperGameManager {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
-                .split(frame.size());
+                .split(frame.area());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -308,7 +308,7 @@ So, in summary: click to uncover squares, use the numbers to avoid the mines, an
 mines with flags. It's a classic game of strategy and deduction that's perfect for relaxing and 
 exercising your brain!");
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
         Ok(())

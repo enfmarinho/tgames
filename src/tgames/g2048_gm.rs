@@ -214,7 +214,7 @@ impl G2048GameManager {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(frame.size());
+                .split(frame.area());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -294,7 +294,7 @@ It's a simple yet addictive puzzle that'll have you sliding tiles and chasing th
 elusive number for hours on end. Enjoy the challenge!",
         );
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(Paragraph::new(message).white(), area);
         })?;
         Ok(())

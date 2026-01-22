@@ -1,5 +1,4 @@
 use super::game_manager::{Coord, Directions};
-use rand::Rng;
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::text::{Line, Span};
 use std::collections::VecDeque;
@@ -165,8 +164,8 @@ impl Board {
     }
 
     fn generate_food(&mut self) {
-        let mut line = rand::thread_rng().gen_range(0..self.height);
-        let mut column = rand::thread_rng().gen_range(0..self.width);
+        let mut line = rand::random_range(0..self.height);
+        let mut column = rand::random_range(0..self.width);
         while !matches!(self.consult_board(line, column), BoardPossibilities::Empty) {
             column += 1;
             if column == self.width {

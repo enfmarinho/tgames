@@ -1,4 +1,3 @@
-use rand::Rng;
 use ratatui::{
     style::{Color, Style},
     text::{Line, Span},
@@ -183,8 +182,7 @@ impl Board {
     }
 
     fn generate_pipe(&mut self) {
-        let delta =
-            rand::thread_rng().gen_range(-MAX_DISTANCE_BETWEEN_HOLES..MAX_DISTANCE_BETWEEN_HOLES);
+        let delta = rand::random_range(-MAX_DISTANCE_BETWEEN_HOLES..MAX_DISTANCE_BETWEEN_HOLES);
         let new_pos = match self.pipe_holes.back() {
             Some(value) => *value + delta,
             None => BOARD_HEIGHT / 2,

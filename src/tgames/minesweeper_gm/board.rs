@@ -1,4 +1,3 @@
-use rand::{thread_rng, Rng};
 use ratatui::{
     style::{Color, Style, Stylize},
     text::{Line, Span},
@@ -119,7 +118,7 @@ impl Board {
         }
         self.board = vec![Square::Close(0); self.board_info.width * self.board_info.height];
         for _ in 0..self.board_info.number_of_bombs {
-            let mut index = thread_rng().gen_range(0..self.board.len());
+            let mut index = rand::random_range(0..self.board.len());
             while self.board[index] == Square::Bomb {
                 index += 1;
                 index %= self.board.len();
@@ -131,8 +130,8 @@ impl Board {
                 self.update_close_square_counter(line, column);
             }
         }
-        self.curr_line = thread_rng().gen_range(0..self.board_info.height);
-        self.curr_column = thread_rng().gen_range(0..self.board_info.width);
+        self.curr_line = rand::random_range(0..self.board_info.height);
+        self.curr_column = rand::random_range(0..self.board_info.width);
         let mut counter = 0;
         while *self.consult_board() != Square::Close(0) {
             self.curr_column += 1;

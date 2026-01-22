@@ -1,5 +1,4 @@
 use super::super::game_manager::Directions;
-use rand::Rng;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 
@@ -293,12 +292,12 @@ impl Board {
     }
 
     fn generate_block(&mut self) {
-        let mut index = rand::thread_rng().gen_range(0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS));
+        let mut index = rand::random_range(0..(NUMBER_OF_LINES * NUMBER_OF_COLUMNS));
         while self.board[index] != 0 {
             index += 1;
             index %= NUMBER_OF_LINES * NUMBER_OF_COLUMNS;
         }
-        let random = rand::thread_rng().gen_range(0..10);
+        let random = rand::random_range(0..10);
         if random == 4 {
             self.board[index] = 4;
         } else {

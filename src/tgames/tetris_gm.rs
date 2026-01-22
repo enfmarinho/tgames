@@ -274,7 +274,7 @@ impl TetrisGameManager {
             let layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(frame.size());
+                .split(frame.area());
             let sub_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -361,7 +361,7 @@ So, in short: move, spin, and stack the falling blocks to make solid lines and k
 playground clear. It's easy to learn, but oh-so-addictive once you get going!",
         );
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
         Ok(())

@@ -237,7 +237,7 @@ So, to sum it up: flap your wings to fly, avoid the pipes, and see how far you c
 It's a simple yet surprisingly addictive game that'll keep you entertained for hours!",
         );
         terminal.draw(|frame| {
-            let area = frame.size();
+            let area = frame.area();
             frame.render_widget(Paragraph::new(message).white(), area)
         })?;
         Ok(())
@@ -267,7 +267,7 @@ It's a simple yet surprisingly addictive game that'll keep you entertained for h
             let layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(80), Constraint::Fill(1)])
-                .split(frame.size());
+                .split(frame.area());
             let sub_layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(20), Constraint::Fill(1)])
