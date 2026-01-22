@@ -145,7 +145,7 @@ impl Board {
         self.score
     }
 
-    pub fn display_board(&self, message: String) -> Vec<Line> {
+    pub fn display_board(&self, message: String) -> Vec<Line<'_>> {
         let mut lines: Vec<Line> = Vec::new();
         lines.push(Line::from(message));
         for line in 0..NUMBER_OF_LINES {
@@ -192,7 +192,7 @@ impl Board {
         lines
     }
 
-    pub fn display_next_brick(&self) -> Vec<Line> {
+    pub fn display_next_brick(&self) -> Vec<Line<'_>> {
         let mut lines: Vec<Line> = Vec::new();
         for i in 0..4 {
             let mut spans: Vec<Span> = Vec::new();

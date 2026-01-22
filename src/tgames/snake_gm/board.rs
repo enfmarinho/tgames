@@ -96,7 +96,7 @@ impl Board {
         self.score
     }
 
-    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
+    pub fn display_board(&self, message: String, color: Color) -> Vec<Line<'_>> {
         let mut lines: Vec<Line> = Vec::new();
         let mut spans: String = String::new();
         spans += "╭";

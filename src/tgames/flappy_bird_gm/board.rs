@@ -113,7 +113,7 @@ impl Board {
         )));
     }
 
-    pub fn display_board(&self, message: String, color: Color) -> Vec<Line> {
+    pub fn display_board(&self, message: String, color: Color) -> Vec<Line<'_>> {
         let mut lines: Vec<Line> = Vec::new();
         Self::push_horizontal_board(&mut lines, true);
         for line in (0..BOARD_HEIGHT).rev() {
