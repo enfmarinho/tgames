@@ -1,31 +1,22 @@
 <div align="center">
 
-# 🕹️ tgames
+# tgames
 
-![Rust](https://img.shields.io/badge/language-rust-orange.svg) 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Cargo](https://img.shields.io/badge/package-cargo-red.svg)
+[![Crates.io](https://img.shields.io/crates/v/tgames.svg)](https://crates.io/crates/tgames)
+[![Downloads](https://img.shields.io/crates/d/tgames.svg)](https://crates.io/crates/tgames)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-<img src="resources/demo.gif" alt="tgames demo" width="800">
-
-A terminal-based mini-games emulator.
+High-performance terminal application written in Rust.
 </div>
 
-## 🎮 List of games
-- Snake
-- Tetris
-- 2048
-- Minesweeper
-- Flappy Bird
-
-## 🛠️ Technical Highlights
+## Technical Highlights
 `tgames` is built with scalability in mind. It uses a **Trait-based abstraction** to handle game logic, allowing for easy expansion.
 * **State Machine Architecture:** Uses a centralized game loop and state machine to handle transitions between different game logics seamlessly.
 * **High-Performance Rendering:** Leverages Ratatui for optimized terminal drawing and immediate-mode UI rendering, allowing for smooth, high-frequency updates with minimal CPU overhead
 * **Non-Blocking Input:** Implemented a multi-threaded event loop using MPSC channels to decouple input polling from game logic, ensuring a fluid, non-blocking frame rate regardless of user activity.
-* **Easy Extension:** Adding a new game is as simple as adding a variant to the `Games` enum and implementing the `GameManager` trait for a new struct. No changes to the core engine are required
+* **Easy Extension:** Adding a new game is as simple as adding a variant to the `Games` enum and implementing the `GameManager` trait for a new struct.
 
-## 🚀 Adding a New Game
+## Adding a New Game
 The engine uses the Strategy Pattern to remain decoupled from game logic.
 To add a new game, simply implement the GameManager trait and register it in the central dispatcher.
 
@@ -57,19 +48,13 @@ fn run_game(&mut self) -> Result<()> {
 }
 ```
 
-## 📦 Installation
+## Demo
+<div align="center">
+<img src="resources/demo.gif" alt="tgames demo" width="800">
+</div>
+
+## Installation
 The installation can be done via cargo, just use:
 ````bash
 cargo install tgames
-``````
-
-## 🦀 Why Rust?
-I chose Rust for this project not just for its modern syntax, but for the specific guarantees it provides for systems-level development:
-
-* **Fearless Concurrency:** Rust’s ownership model ensured that my multi-threaded input handling remained data-race free, allowing for a stable, non-blocking game loop.
-
-* **Deterministic Resource Management:** Rust allows for precise control over heap allocations. This ensures that the runtime execution and memory footprint of the program to remain highly predictable.
-
-* **Zero-Cost Abstractions:** The Trait-based architecture used in tgames allows for high-level modularity without sacrificing the performance of the underlying machine code.
-
-* **Learning:** Beyond the technical requirements, I chose Rust out of curiosity and desire to master a modern approach to systems design. I wanted to move away from manual memory management and learn the Borrow Checker to improve my ability to write memory-safe software.
+```
