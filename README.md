@@ -55,6 +55,6 @@ fn run_game(&mut self) -> Result<()> {
 
 ## Installation
 The installation can be done via cargo, just use:
-````bash
+```bash
 cargo install tgames
 ```
